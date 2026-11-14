@@ -1,0 +1,1387 @@
+<!doctype html>
+<!--
+  Boru Hattı Tasarım Programı
+  Pipeline Design
+  © 2026 Yiğit Berke Arıkan — MIT License (see LICENSE)
+-->
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Yiğit Berke Arıkan">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boru Hattı Tasarım Programı</title>
+<style>
+:root{
+  --bg:#eef1f4; --panel:#fff; --soft:#f5f7f9; --ink:#14202b; --mute:#5d6b76; --line:#d5dce2;
+  --acc:#1f6fb2; --acc-soft:#e3eef8; --bad:#c0392b; --ok:#2a8556; --warn:#b9770e; --vio:#6b3fc4;
+  --mon:#0c1218; --mon-ink:#dbe6ee; --mon-mute:#8ea2af; --mon-pipe:#c8dce8; --mon-water:#46a0d8;
+  --f:"Segoe UI",system-ui,sans-serif; --fm:Consolas,"Cascadia Mono",ui-monospace,monospace;
+  --r:12px; --on-acc:#fff;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --bg:#0f1418; --panel:#182028; --soft:#1e2832; --ink:#e4ebf0; --mute:#98a6b0; --line:#2b3741; --acc:#6bb6e8; --acc-soft:#1d3346; --bad:#ff7163; --ok:#5ccf8f; --warn:#f0b04a; --vio:#a98bff; --on-acc:#0f1418; color-scheme:dark } }
+:root[data-theme="dark"]{ --bg:#0f1418; --panel:#182028; --soft:#1e2832; --ink:#e4ebf0; --mute:#98a6b0; --line:#2b3741; --acc:#6bb6e8; --acc-soft:#1d3346; --bad:#ff7163; --ok:#5ccf8f; --warn:#f0b04a; --vio:#a98bff; --on-acc:#0f1418; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.5 var(--f);display:flex;flex-direction:column}
+.top{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;padding-block:12px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--acc);display:grid;place-items:center;flex:none}
+.brand h1{margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.brand p{margin:1px 0 0;font-size:12.5px;color:var(--mute)}
+.tools{display:flex;flex-wrap:wrap;gap:6px}
+button{font:500 13px/1 var(--f);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:pointer}
+button:hover{border-color:var(--mute)}
+button.pri{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.app{flex:1;min-height:0;display:grid;grid-template-columns:372px minmax(0,1fr);gap:14px;padding-block:14px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.side{overflow:auto;display:grid;gap:8px;align-content:start;padding-right:2px}
+.main{display:flex;flex-direction:column;min-height:0;min-width:0;gap:10px}
+@media (max-width:980px){ html,body{height:auto} .app{grid-template-columns:minmax(0,1fr)} .side,.panel{overflow:visible} }
+details.acc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+details.acc[open]{border-color:var(--acc)}
+details.acc>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:26px minmax(0,1fr) 14px;gap:10px;align-items:center;padding:11px 13px;border-radius:var(--r)}
+details.acc>summary::-webkit-details-marker{display:none}
+.num{width:26px;height:26px;border-radius:50%;background:var(--acc-soft);color:var(--acc);display:grid;place-items:center;font:600 12.5px var(--f)}
+details.acc[open] .num{background:var(--acc);color:var(--panel)}
+.st b{display:block;font-weight:600;font-size:14px}
+.st span{display:block;font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{width:8px;height:8px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);transition:transform .15s}
+details.acc[open] .chev{transform:rotate(-135deg)}
+.body{padding:4px 13px 14px;display:grid;gap:9px}
+.fr{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;align-items:center}
+.fr label{font-size:13px;color:var(--mute)}
+.fr.wide{grid-template-columns:minmax(0,1fr)}
+input,select{font:14px var(--f);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;width:100%;min-width:0}
+.two{display:grid;grid-template-columns:1.5fr 1fr;gap:6px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+.seg button{border:0;background:none;padding:8px 6px;border-radius:7px;color:var(--mute)}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.15);font-weight:600}
+.hint{font-size:12px;color:var(--mute);margin:0}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+tr:last-child>td{border-bottom:0}
+th{font-weight:600;color:var(--mute);font-size:12px;white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--fm);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mini input{padding:4px 5px;text-align:right}
+.mini td,.mini th{padding:4px 3px}
+.mini td:first-child input{text-align:left}
+.x{border:0;background:none;color:var(--mute);padding:4px 6px;font-size:15px}
+.kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+@media (max-width:1380px){ .kpis{grid-template-columns:repeat(4,minmax(0,1fr))} }
+@media (max-width:640px){ .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+#toast{position:fixed;left:50%;bottom:calc(46px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:9px 14px;border-radius:9px;font-size:13px;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px;min-width:0}
+.kpi span{display:block;font-size:11.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi b{font:600 17px var(--f);font-variant-numeric:tabular-nums}
+.kpi i{font:400 11.5px var(--fm);color:var(--mute);font-style:normal}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;flex:none}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:10px 14px;color:var(--mute);white-space:nowrap}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--acc);font-weight:600}
+.badge{display:inline-block;min-width:18px;padding:1px 6px;border-radius:9px;font:600 11px var(--f);color:var(--on-acc);background:var(--bad);margin-left:6px}
+.badge.w{background:var(--warn)}
+.panel{flex:1;min-height:0;overflow:auto;display:grid;gap:12px;align-content:start;padding-bottom:6px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.card>h2{margin:0;padding:11px 14px 9px;font-size:14px;font-weight:600;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.card>h2 small{font:400 12px var(--fm);color:var(--mute)}
+.cb{padding:10px 14px 12px;overflow-x:auto}
+.grid2{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1280px){ .grid2{grid-template-columns:1fr 1fr} }
+.msgs{display:grid;gap:6px}
+.msg{font-size:13.5px;padding:8px 11px;border-radius:8px;border-left:4px solid var(--ok);background:color-mix(in srgb,var(--ok) 9%,var(--panel))}
+.msg.w{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 11%,var(--panel))}
+.msg.e{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--panel))}
+.rt{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;font:700 12px var(--f);color:var(--on-acc);background:var(--mute)}
+.rt.A{background:var(--ok)} .rt.B{background:var(--acc)} .rt.C{background:var(--warn)} .rt.D{background:var(--bad)}
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font:600 11.5px var(--f);background:var(--soft);color:var(--mute);white-space:nowrap}
+.pill.sel{background:var(--acc);color:var(--panel)} .pill.ok{background:color-mix(in srgb,var(--ok) 18%,var(--panel));color:var(--ok)} .pill.no{background:color-mix(in srgb,var(--bad) 14%,var(--panel));color:var(--bad)}
+.simwrap{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1200px){ .simwrap{grid-template-columns:minmax(0,1fr) 290px} }
+.monitor{background:var(--mon);border-radius:var(--r);padding:10px;color:var(--mon-ink)}
+.mhead,.mfoot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;font:400 12px var(--fm);color:var(--mon-mute);padding:2px 4px 8px}
+.mfoot{padding:8px 4px 2px}
+.mfoot b{color:var(--mon-ink)}
+#pfd{display:block;width:100%;height:auto}
+.simctl{display:grid;gap:12px;padding:12px 14px}
+.sl .t{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);gap:8px}
+.sl output{font:400 12px var(--fm);color:var(--ink);white-space:nowrap}
+input[type=range]{padding:0;border:0;accent-color:var(--acc);background:none}
+.state{font-weight:700;font-size:19px}
+.ch{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:2px 14px 12px;font-size:12.5px;color:var(--mute)}
+.legend i{display:inline-block;width:20px;height:0;border-top:2.4px solid;vertical-align:middle;margin-right:6px}
+.steps{padding:6px 14px 14px;display:grid;gap:14px;counter-reset:s}
+.step{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:6px}
+.step::before{content:counter(s,decimal-leading-zero);font:600 13px/1.8 var(--fm);color:var(--acc)}
+.step h3{margin:0;font-size:15px}
+.step p{margin:3px 0 0;color:var(--mute);font-size:13.5px}
+.step .f{font:13.5px var(--fm);margin:4px 0 0;overflow-x:auto;white-space:nowrap;color:var(--ink)}
+.step table{margin:6px 0}
+.note{font-size:12.5px;color:var(--mute);padding:0 14px 12px;margin:0}
+details.acc>summary{grid-template-columns:44px minmax(0,1fr) 14px;padding:9px 13px 9px 9px}
+.ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--panel));transition:background .2s,color .2s,transform .2s,box-shadow .2s}
+.c1{--c:var(--acc)} .c2{--c:var(--vio)} .c3{--c:var(--ok)} .c4{--c:var(--warn)} .c5{--c:var(--bad)}
+details.acc[open] .ico{background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 60%,var(--vio)));color:var(--panel);transform:scale(1.05);box-shadow:0 5px 14px color-mix(in srgb,var(--c) 40%,transparent)}
+details.acc:hover .ico{transform:scale(1.05)}
+.st b{font-size:15px}
+.st span{display:none}
+.seg button{display:grid;justify-items:center;gap:3px;padding:7px 6px 6px}
+.sk{display:block;width:100%;height:auto;background:var(--soft);border:1px solid var(--line);border-radius:10px}
+.sk .v{fill:var(--panel);stroke:var(--ink);stroke-width:1.6} .sk .w{fill:var(--acc);opacity:.35} .sk .p{fill:none;stroke:var(--acc);stroke-width:3.2;stroke-linejoin:round;stroke-linecap:round} .sk .a{fill:var(--acc)} .sk .d{stroke:var(--mute);stroke-width:1.2;fill:none} .sk text{font:700 12.5px var(--f);fill:var(--ink)}
+.sym{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 4px;margin-right:7px;border-radius:6px;background:var(--acc-soft);color:var(--acc);font:700 11.5px var(--f);font-style:normal}
+.fi{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--soft);color:var(--acc);margin-right:7px;vertical-align:middle}
+#fitT td:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.sig{flex:none;text-align:center;font-size:12px;color:var(--mute);padding-block:5px 7px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));border-top:1px solid var(--line);background:var(--panel);letter-spacing:.02em}
+.sig b{color:var(--ink);font-weight:600}
+.monitor{position:relative}
+#pfd{touch-action:none;user-select:none;-webkit-user-select:none}
+#pfd text,#pfd .pp,#pfd #bub{pointer-events:none}
+.mtools{position:absolute;top:34px;right:14px;display:flex;gap:6px;align-items:center;z-index:6}
+.mtools button:not(.helpb){background:rgba(12,18,24,.88);color:#dbe6ee;border:1px solid rgba(140,170,190,.45);padding:7px 10px;font-size:12px}
+.helpb{width:30px;height:30px;border-radius:50%;padding:0;font:700 16px var(--f);background:var(--acc);color:var(--on-acc);border:0;z-index:6;animation:helpPulse 2.6s ease-in-out infinite}
+@keyframes helpPulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--acc) 30%,transparent)}}
+.helpbox{position:absolute;inset:8px;background:rgba(8,13,18,.95);border-radius:10px;padding:16px 18px;overflow:auto;display:grid;gap:12px;align-content:start;z-index:5;color:#dbe6ee}
+.helpbox h3{margin:0;font-size:16px;padding-right:44px}
+.tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.tip{background:rgba(140,170,190,.08);border:1px solid rgba(140,170,190,.28);border-radius:10px;padding:8px 10px}
+.tip svg{height:58px;width:auto;max-width:100%;display:block;margin:0 auto}
+.tip b{display:block;font-size:13.5px;margin-top:6px}
+.tip span{font-size:12.5px;color:#9db0bc}
+.tip .mv{animation:nudge 1.6s ease-in-out infinite}
+@keyframes nudge{50%{transform:translate(var(--dx,0),var(--dy,-6px))}}
+/* ---------- görsel efektler ---------- */
+body{background:radial-gradient(1100px 520px at 88% -8%,color-mix(in srgb,var(--acc) 13%,transparent),transparent 70%),radial-gradient(900px 480px at -5% 105%,color-mix(in srgb,var(--vio) 9%,transparent),transparent 70%),var(--bg);background-attachment:fixed}
+.top{position:relative;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:linear-gradient(90deg,var(--acc),var(--vio),var(--ok),var(--acc));background-size:300% 100%;animation:slide 9s linear infinite}
+@keyframes slide{to{background-position:300% 0}}
+.logo{background:linear-gradient(135deg,var(--acc),var(--vio));box-shadow:0 4px 14px color-mix(in srgb,var(--acc) 45%,transparent);animation:breathe 4s ease-in-out infinite}
+@keyframes breathe{50%{box-shadow:0 4px 22px color-mix(in srgb,var(--vio) 60%,transparent);transform:scale(1.04)}}
+button{transition:transform .12s,box-shadow .15s,border-color .15s,background .15s,color .15s}
+button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+button:active:not(:disabled){transform:scale(.97)}
+.tabs button:hover,.seg button:hover,.x:hover{transform:none!important;box-shadow:none!important}
+.tabs button:hover{color:var(--ink)}
+.seg button.on{box-shadow:0 1px 2px rgba(0,0,0,.15)!important}
+button.pri{background:linear-gradient(135deg,var(--acc),var(--vio));border-color:transparent;position:relative;overflow:hidden;box-shadow:0 3px 12px color-mix(in srgb,var(--acc) 40%,transparent)}
+button.pri::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);animation:sheen 3.6s ease-in-out infinite}
+@keyframes sheen{0%,60%{left:-60%}100%{left:130%}}
+input,select{transition:border-color .15s,box-shadow .15s}
+input:not([type=range]):focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft);outline:0}
+details.acc{transition:border-color .2s,box-shadow .2s}
+details.acc:hover{box-shadow:0 3px 12px rgba(0,0,0,.07)}
+details.acc[open]{box-shadow:0 6px 22px color-mix(in srgb,var(--acc) 18%,transparent)}
+details.acc[open]>.body{animation:accIn .28s ease}
+@keyframes accIn{from{opacity:0;transform:translateY(-6px)}}
+.num{transition:background .2s,color .2s,transform .2s}
+details.acc[open] .num{transform:scale(1.08);box-shadow:0 0 0 4px var(--acc-soft)}
+.kpi{position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--acc),var(--vio));opacity:.75}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.1);border-color:var(--acc)}
+.kpi.flash{animation:kflash .7s ease}
+.kpi.flash b{animation:knum .5s ease}
+@keyframes kflash{0%{background:var(--acc-soft);border-color:var(--acc)}}
+@keyframes knum{0%{opacity:.2;transform:translateY(5px)}}
+.kpi b{display:inline-block}
+.tabs button{transition:color .15s,border-color .25s}
+.badge{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--bad) 22%,transparent)}}
+.badge.w{animation:none}
+.panel:not([hidden])>*{animation:rise .34s ease both}
+.panel:not([hidden])>*:nth-child(2){animation-delay:.06s}
+.panel:not([hidden])>*:nth-child(3){animation-delay:.12s}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.card{transition:box-shadow .2s,border-color .2s}
+.card:hover{box-shadow:0 6px 22px rgba(0,0,0,.08)}
+.card tr{transition:background .12s}
+.card table tr:hover>td{background:color-mix(in srgb,var(--acc) 5%,transparent)}
+.pill.sel{box-shadow:0 0 0 3px var(--acc-soft)}
+.msg{transition:transform .15s}
+.msg:hover{transform:translateX(3px)}
+.monitor{background:linear-gradient(rgba(140,170,190,.045) 1px,transparent 1px) 0 0/100% 22px,linear-gradient(90deg,rgba(140,170,190,.045) 1px,transparent 1px) 0 0/22px 100%,radial-gradient(900px 380px at 50% 0,#16222d,var(--mon));box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 0 0 1px #223040}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff5a4a;margin-right:7px;box-shadow:0 0 8px #ff5a4a;animation:blink 1.3s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+#pfd .pp circle{filter:drop-shadow(0 0 3px var(--mon-water))}
+#pfd .liq{animation:liq 2.6s ease-in-out infinite;transform-box:fill-box}
+@keyframes liq{50%{transform:translateY(2.5px)}}
+#pfd #imp{filter:drop-shadow(0 0 4px var(--acc))}
+#pfd.cav #pumpG{animation:shake .1s linear infinite}
+@keyframes shake{25%{transform:translate(1.2px,-1px)}75%{transform:translate(-1.2px,1px)}}
+.state{transition:color .3s}
+.ch.anim polyline.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.ch.anim circle{animation:pop .4s .7s ease both;transform-box:fill-box;transform-origin:center}
+@keyframes pop{from{transform:scale(0)}}
+.side,.panel{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">
+    <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h7v10h11"/><circle cx="10" cy="17" r="2.6" fill="#fff"/></svg></div>
+    <div><h1 data-tr="Boru Hattı Tasarımı" data-en="Pipeline Design"></h1><p data-tr="Sonuçlar doğrulanmalıdır, bu bir ön tasarım aracıdır" data-en="Results must be verified; this is a preliminary design tool"></p></div>
+  </div>
+  <div class="tools">
+    <button id="bRef" data-tr="Referans örneği" data-en="Reference example"></button>
+    <button id="bLang">English</button>
+    <button id="bPdf" class="pri" data-tr="Hesap raporunu indir (PDF)" data-en="Download calculation report (PDF)"></button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="side" id="inputs">
+    <details class="acc" name="acc" open>
+      <summary><span class="ico c1"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.5 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.5 6-11z"/><path d="M9.5 15a2.6 2.6 0 0 0 2.5 2"/></svg></span><span class="st"><b data-tr="Akışkan" data-en="Fluid"></b><span id="d1"></span></span><span class="chev"></span></summary>
+      <div class="body">
+        <div class="fr wide"><select id="fluid"></select></div>
+        <div id="customBox" hidden>
+          <div class="body" style="padding:0">
+            <div class="fr"><label data-tr="Yoğunluk (kg/m³)" data-en="Density (kg/m³)"></label><input id="cRho" type="number" value="1000" step="any"></div>
+            <div class="fr"><label data-tr="Viskozite (cP)" data-en="Viscosity (cP)"></label><input id="cMu" type="number" value="1" step="any"></div>
+            <div class="fr"><label data-tr="Buhar basıncı (kPa)" data-en="Vapor pressure (kPa)"></label><input id="cPv" type="number" value="2.3" step="any"></div>
+          </div>
+        </div>
+        <div class="fr"><label data-tr="Sıcaklık (°C)" data-en="Temperature (°C)"></label><input id="T" type="number" value="55" step="any"></div>
+        <div class="fr"><label data-tr="Debi" data-en="Flow"></label>
+          <div class="two"><input id="flow" type="number" value="80000" step="any"><select id="flowBasis"><option value="mass">kg/h</option><option value="vol">m³/h</option></select></div></div>
+      </div>
+    </details>
+
+    <details class="acc" name="acc">
+      <summary><span class="ico c2"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M5 8.5V14a4 4 0 0 0 4 4h7.5"/></svg></span><span class="st"><b data-tr="Güzergâh" data-en="Route"></b><span id="d2"></span></span><span class="chev"></span></summary>
+      <div class="body">
+        <div class="seg"><button type="button" id="mSingle"><svg viewBox="0 0 60 22" width="60" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="11" r="4"/><path d="M10 11h36"/><circle cx="54" cy="11" r="4"/></svg><span data-tr="Tek hat" data-en="Single"></span></button><button type="button" id="mBranch"><svg viewBox="0 0 60 22" width="60" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="11" r="4"/><path d="M10 11h18M28 11V5h22M28 11v6h22"/><circle cx="54" cy="5" r="3"/><circle cx="54" cy="17" r="3"/></svg><span data-tr="Dallanan" data-en="Branched"></span></button></div>
+        <svg class="sk" id="skS" viewBox="0 0 330 140" aria-hidden="true"><rect x="14" y="16" width="56" height="40" rx="7" class="v"/><rect x="16" y="30" width="52" height="24" rx="5" class="w"/><path d="M42 56V112H121" class="p"/><circle cx="134" cy="112" r="13" class="v"/><path d="M129 105l12 7-12 7z" class="a"/><path d="M147 112H250V46H274" class="p"/><rect x="274" y="24" width="46" height="44" rx="7" class="v"/><rect x="276" y="44" width="42" height="22" rx="5" class="w"/><path d="M84 30V112M78 30h12M78 112h12M232 46V112M226 46h12M226 112h12" class="d"/><text x="42" y="11" text-anchor="middle">P₁</text><text x="297" y="18" text-anchor="middle">P₂</text><text x="92" y="76">h₁</text><text x="210" y="84">h₂</text><text x="82" y="130" text-anchor="middle">L₁</text><text x="190" y="130" text-anchor="middle">L₂</text></svg>
+        <svg class="sk" id="skB" viewBox="0 0 330 140" aria-hidden="true" hidden><rect x="14" y="16" width="56" height="40" rx="7" class="v"/><rect x="16" y="30" width="52" height="24" rx="5" class="w"/><path d="M42 56V112H121" class="p"/><circle cx="134" cy="112" r="13" class="v"/><path d="M129 105l12 7-12 7z" class="a"/><path d="M147 112H214" class="p"/><path d="M214 112V38H274" class="p" style="stroke:var(--vio)"/><path d="M214 112H274" class="p" style="stroke:var(--ok)"/><circle cx="214" cy="112" r="5" style="fill:var(--ink)"/><rect x="274" y="18" width="46" height="40" rx="7" class="v"/><rect x="276" y="36" width="42" height="20" rx="5" class="w"/><rect x="274" y="92" width="46" height="40" rx="7" class="v"/><rect x="276" y="110" width="42" height="20" rx="5" class="w"/><path d="M84 30V112M78 30h12M78 112h12" class="d"/><text x="42" y="11" text-anchor="middle">P₁</text><text x="92" y="76">h₁</text><text x="82" y="130" text-anchor="middle">L₁</text><text x="180" y="130" text-anchor="middle">L₃</text><text x="204" y="98" text-anchor="end">T · h₃</text><text x="244" y="32" text-anchor="middle">1</text><text x="244" y="106" text-anchor="middle">2</text></svg>
+        <div class="fr"><label title="Kaynak tank basıncı (atm, mutlak)"><i class="sym">P₁</i><span data-tr="Tank basıncı (atm)" data-en="Tank pressure (atm)"></span></label><input id="P1" type="number" value="1" step="any"></div>
+        <div class="fr"><label title="Tank sıvı seviyesi, pompaya göre (m)"><i class="sym">h₁</i><span data-tr="Tank seviyesi (m)" data-en="Tank level (m)"></span></label><input id="zt" type="number" value="5" step="any"></div>
+        <div class="fr"><label title="Emme hattı yatay uzunluğu (m)"><i class="sym">L₁</i><span data-tr="Tank → pompa yatay (m)" data-en="Tank → pump run (m)"></span></label><input id="Lsh" type="number" value="2" step="any" min="0"></div>
+        <div id="singleBox" class="body" style="padding:0">
+          <div class="fr"><label title="Hedef basıncı (atm, mutlak)"><i class="sym">P₂</i><span data-tr="Hedef basıncı (atm)" data-en="Dest. pressure (atm)"></span></label><input id="P2" type="number" value="1.3" step="any"></div>
+          <div class="fr"><label title="Hedef girişi, pompaya göre (m)"><i class="sym">h₂</i><span data-tr="Hedef kotu (m)" data-en="Dest. elevation (m)"></span></label><input id="zr" type="number" value="15" step="any"></div>
+          <div class="fr"><label title="Basma hattı yatay uzunluğu (m)"><i class="sym">L₂</i><span data-tr="Pompa → hedef yatay (m)" data-en="Pump → dest. run (m)"></span></label><input id="Ldh" type="number" value="16" step="any" min="0"></div>
+        </div>
+        <div id="branchBox" class="body" style="padding:0" hidden>
+          <div class="fr"><label title="Pompadan T ayrımına yatay uzunluk (m)"><i class="sym">L₃</i><span data-tr="Pompa → T yatay (m)" data-en="Pump → tee run (m)"></span></label><input id="Lm" type="number" value="12" step="any" min="0"></div>
+          <div class="fr"><label title="T ayrımının kotu, pompaya göre (m)"><i class="sym">h₃</i><span data-tr="T kotu (m)" data-en="Tee elevation (m)"></span></label><input id="zj" type="number" value="0" step="any"></div>
+          <table class="mini" id="brT"></table>
+          <div><button type="button" id="bAdd" data-tr="+ Kol ekle" data-en="+ Add branch"></button></div>
+          <p class="hint" data-tr="Her kol: T girişi + ayar vanası + tank girişi." data-en="Each branch: tee + control valve + tank inlet."></p>
+        </div>
+      </div>
+    </details>
+
+    <details class="acc" name="acc">
+      <summary><span class="ico c3"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5h4v7H3zM17 8.5h4v7h-4zM7 10h10v4H7z"/></svg></span><span class="st"><b data-tr="Boru" data-en="Pipe"></b><span id="d3"></span></span><span class="chev"></span></summary>
+      <div class="body">
+        <div class="fr"><label data-tr="Malzeme" data-en="Material"></label><select id="matMode"></select></div>
+        <div class="fr"><label data-tr="Çap" data-en="Sizing"></label><select id="diaMode">
+          <option value="auto" data-tr="Ekonomik çap" data-en="Economic diameter"></option>
+          <option value="vel" data-tr="İstenen hıza göre" data-en="By target velocity"></option>
+          <option value="man" data-tr="Elle seçim" data-en="Manual size"></option></select></div>
+        <div class="fr" id="vRow" hidden><label data-tr="İstenen hız (m/s)" data-en="Target velocity (m/s)"></label><input id="vT" type="number" value="1.5" step="any" min="0.05"></div>
+        <div class="fr" id="npsRow" hidden><label data-tr="Nominal çap" data-en="Nominal size"></label><select id="nps"></select></div>
+      </div>
+    </details>
+
+    <details class="acc" name="acc">
+      <summary><span class="ico c4"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v8a8 8 0 0 0 8 8h8M10 3v8a3 3 0 0 0 3 3h8"/></svg></span><span class="st"><b data-tr="Bağlantılar" data-en="Fittings"></b><span id="d4"></span></span><span class="chev"></span></summary>
+      <div class="body"><table id="fitT"></table><p class="hint" data-tr="Bu liste akış şemasından okunur. Parça eklemek ya da çıkarmak için şemayı düzenleyin." data-en="This list is read from the flow diagram. Edit the diagram to add or remove fittings."></p></div>
+    </details>
+
+    <details class="acc" name="acc">
+      <summary><span class="ico c5"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="13.5" r="6.5"/><path d="M10.5 7H20v4h-3.6M8.3 10.6l5 2.9-5 2.9z"/></svg></span><span class="st"><b data-tr="Pompa" data-en="Pump"></b><span id="d5"></span></span><span class="chev"></span></summary>
+      <div class="body">
+        <div class="fr"><label data-tr="Devir (rpm)" data-en="Speed (rpm)"></label><select id="rpm"><option>3500</option><option>2900</option><option>1750</option><option>1450</option></select></div>
+        <div class="fr"><label data-tr="Gereken NPEY (m)" data-en="NPSH required (m)"></label><input id="npshr" type="number" value="3" step="any"></div>
+        <div class="fr"><label data-tr="Ortam (°C)" data-en="Ambient (°C)"></label><input id="Ta" type="number" value="20" step="any"></div>
+        <div class="fr"><label data-tr="Çalışma (saat/yıl)" data-en="Hours per year"></label><input id="hours" type="number" value="8000" step="any"></div>
+        <div class="fr"><label data-tr="Elektrik (/kWh)" data-en="Electricity (/kWh)"></label>
+          <div class="two"><input id="price" type="number" value="4.93" step="any"><input id="cur" value="TL" maxlength="4"></div></div>
+        <div class="fr"><label data-tr="Verim % (boş: otomatik)" data-en="Efficiency % (blank: auto)"></label><input id="eff" type="number" step="any" placeholder="auto"></div>
+        <div class="fr"><label data-tr="f (boş: otomatik)" data-en="f (blank: auto)"></label><input id="fOv" type="number" step="any" placeholder="auto"></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="main">
+    <div class="kpis" id="kpis"></div>
+    <div class="tabs" id="tabs">
+      <button data-tab="sum" class="on"><span data-tr="Özet" data-en="Summary"></span><span id="tbBadge"></span></button>
+      <button data-tab="rec" data-tr="Öneriler ve malzeme" data-en="Recommendations and materials"></button>
+      <button data-tab="sim" data-tr="Akış şeması ve simülasyon" data-en="Flow diagram and simulation"></button>
+      <button data-tab="chart" data-tr="Grafikler" data-en="Charts"></button>
+      <button data-tab="calc" data-tr="Hesap adımları" data-en="Calculation steps"></button>
+    </div>
+
+    <div class="panel" id="p_sum">
+      <section class="card"><h2 data-tr="Durum ve uyarılar" data-en="Status and warnings"><small id="sumNote"></small></h2><div class="cb"><div class="msgs" id="msgs"></div></div></section>
+      <section class="card" id="brCard"><h2 data-tr="Kollar" data-en="Branches"><small data-tr="pompa en zor kola göre seçilir" data-en="the pump is sized for the hardest branch"></small></h2><div class="cb"><table id="brRes"></table></div></section>
+      <section class="card"><h2 data-tr="Akışkan özellikleri" data-en="Fluid properties"></h2><div class="cb"><table id="propT"></table></div></section>
+    </div>
+
+    <div class="panel" id="p_rec" hidden>
+      <section class="card"><h2 data-tr="Önerilen sistem elemanları" data-en="Recommended system components"></h2><div class="cb"><table id="recT"></table></div></section>
+      <section class="card" id="compCard"><h2 data-tr="Malzeme uyumu" data-en="Material compatibility"><small id="compNote"></small></h2><div class="cb"><table id="compT"></table><p class="hint" style="margin-top:8px" data-tr="A: mükemmel · B: iyi · C: orta–zayıf · D: önerilmez · –: veri yok. Kılavuz değerleri 21 °C içindir; 40 °C üstünde yalnızca A kabul edilir. Yanıcı akışkanlarda plastik boru önerilmez." data-en="A: excellent · B: good · C: fair to poor · D: not recommended · –: no data. Guide ratings are for 21 °C; above 40 °C only A is accepted. Plastic pipe is not recommended for flammable fluids."></p></div></section>
+    </div>
+
+    <div class="panel" id="p_sim" hidden>
+      <div class="simwrap">
+        <section class="monitor">
+          <div class="mhead"><span><i class="dot"></i><span data-tr="AKIŞ ŞEMASI · sürükleyerek düzenle" data-en="FLOW DIAGRAM · drag to edit"></span></span><span id="hud"></span></div>
+          <svg id="pfd" viewBox="0 0 900 440" role="img"></svg>
+          <div class="mtools"><button id="bLayClear" type="button" data-tr="Boş şema" data-en="Blank"></button><button id="bLayReset" type="button" data-tr="Sıfırla" data-en="Reset"></button><button id="bHelp" class="helpb" type="button" aria-label="Yardım / Help">?</button></div>
+          <div id="helpBox" class="helpbox" hidden></div>
+          <div class="mfoot" id="mfoot"></div>
+        </section>
+        <section class="card">
+          <h2 data-tr="Simülasyon" data-en="Simulation"><small data-tr="pompa eğrisi temsilî" data-en="illustrative pump curve"></small></h2>
+          <div class="simctl">
+            <div><span class="state" id="simState"></span><div id="simTxt" style="font-size:13px;color:var(--mute)"></div></div>
+            <div class="sl"><div class="t"><label for="sN" data-tr="Pompa devri" data-en="Pump speed"></label><output id="oN"></output></div><input id="sN" type="range" min="50" max="120" value="100"></div>
+            <div class="sl"><div class="t"><label for="sV" data-tr="Emme vanası" data-en="Suction valve"></label><output id="oV"></output></div><input id="sV" type="range" min="0" max="3" step="1" value="3"></div>
+            <div id="brSl" style="display:grid;gap:12px"></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><button id="bPlay"></button><button id="bReset" data-tr="Tasarım noktası" data-en="Design point"></button></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="panel" id="p_chart" hidden>
+      <div class="grid2">
+        <section class="card"><h2 data-tr="Hat boyunca basınç" data-en="Pressure along the line"><small>bar(a)</small></h2><svg class="ch" id="cP" viewBox="0 0 560 290"></svg><div class="legend" id="lgP"></div></section>
+        <section class="card"><h2 data-tr="Sistem eğrisi ve pompa eğrisi" data-en="System curve and pump curve"><small>m – m³/h</small></h2><svg class="ch" id="cS" viewBox="0 0 560 290"></svg>
+          <div class="legend"><span><i style="color:var(--acc)"></i><span data-tr="Sistem eğrisi" data-en="System curve"></span></span><span><i style="color:var(--vio)"></i><span data-tr="Pompa eğrisi (temsilî)" data-en="Pump curve (illustrative)"></span></span><span>● <span data-tr="çalışma noktası" data-en="operating point"></span></span></div></section>
+      </div>
+      <section class="card"><h2 data-tr="Akış profili (ana hat)" data-en="Velocity profile (main line)"><small id="vpNote"></small></h2><svg class="ch" id="cV" viewBox="0 0 900 230" style="max-height:230px"></svg></section>
+    </div>
+
+    <div class="panel" id="p_calc" hidden>
+      <section class="card">
+        <h2 data-tr="Hesap adımları" data-en="Calculation steps"><small data-tr="değerlerin nereden, nasıl bulunduğu" data-en="where each value comes from"></small></h2>
+        <div class="steps" id="steps"></div>
+        <p class="note" id="foot"></p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" hidden></div>
+<footer class="sig">© 2026 <b>Yiğit Berke Arıkan</b></footer>
+
+<script>
+/* Boru Hattı Tasarım Programı — © 2026 Yiğit Berke Arıkan */
+(() => {
+'use strict';
+const AUTHOR = 'Yiğit Berke Arıkan';
+let lang = 'tr';
+const L = (tr, en) => lang === 'tr' ? tr : en;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = (v, d = 2) => isFinite(v) ? v.toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–';
+const sig = (v, n = 3) => { if (!isFinite(v) || v === 0) return fmt(v, 0); const d = Math.max(0, n - 1 - Math.floor(Math.log10(Math.abs(v)))); return fmt(v, Math.min(d, 6)); };
+const G = 9.81, ATM = 101325;
+const BCOL = ['var(--acc)', 'var(--vio)', 'var(--ok)', 'var(--warn)'];
+
+/* ====================== VERİLER ====================== */
+const STEEL40 = [['1/2',21.3,2.77],['3/4',26.7,2.87],['1',33.4,3.38],['1 1/4',42.2,3.56],['1 1/2',48.3,3.68],['2',60.3,3.91],['2 1/2',73,5.16],['3',88.9,5.49],['3 1/2',101.6,5.74],['4',114.3,6.02],['5',141.3,6.55],['6',168.3,7.11],['8',219.1,8.18],['10',273,9.27],['12',323.8,10.31],['14',355.6,11.13],['16',406.4,12.7],['18',457,14.27],['20',508,15.09],['24',610,17.48]]
+  .map(([nps, od, t]) => ({ nps, od, t, id: od - 2 * t }));
+const PLAST80 = [['1/2',0.840,0.526,850],['3/4',1.050,0.722,690],['1',1.315,0.935,630],['1 1/4',1.660,1.254,520],['1 1/2',1.900,1.476,470],['2',2.375,1.913,400],['2 1/2',2.875,2.290,420],['3',3.5,2.864,370],['4',4.5,3.786,320],['5',5.563,4.767,290],['6',6.625,5.709,280],['8',8.625,7.565,250],['10',10.75,9.493,230],['12',12.75,11.294,230]]
+  .map(([nps, od, id, psi]) => ({ nps, od: od * 25.4, id: id * 25.4, t: (od - id) * 12.7, psi }));
+const LINED = STEEL40.filter(p => p.id > 40).map(p => { const lt = p.id < 110 ? 3 : 4; return { nps: p.nps, od: p.od, t: p.t, id: p.id - 2 * lt }; });
+// gi: Graco kılavuzundaki notun fluid.gr içindeki sırası. plastic: yanıcı akışkanda kullanılmaz
+const MATS = {
+  cs:   { tr: 'Karbon çeliği (A106) Sch 40', en: 'Carbon steel (A106) Sch 40', gi: 0, eps: 0.046, kw: 45, pipes: STEEL40, S: 110, Tmax: 400, pump: ['dökme demir / karbon çeliği', 'cast iron / carbon steel'] },
+  pvc:  { tr: 'PVC Sch 80', en: 'PVC Sch 80', plastic: 1, eps: 0.0015, kw: 0.19, pipes: PLAST80, der: [[23,1],[27,.88],[32,.75],[38,.62],[43,.51],[49,.40],[54,.31],[60,.22]], Tmax: 60, pump: ['PP / PVDF', 'PP / PVDF'] },
+  cpvc: { tr: 'CPVC (Corzan) Sch 80', en: 'CPVC (Corzan) Sch 80', plastic: 1, eps: 0.0015, kw: 0.14, pipes: PLAST80, der: [[23,1],[27,1],[32,.91],[38,.82],[43,.77],[49,.65],[54,.62],[60,.50],[66,.47],[71,.40],[77,.32],[82,.25],[93,.20]], Tmax: 93, pump: ['PVDF / PP', 'PVDF / PP'] },
+  pp:   { tr: 'Polipropilen (PP) Sch 80', en: 'Polypropylene (PP) Sch 80', gi: 2, plastic: 1, eps: 0.0015, kw: 0.22, pipes: PLAST80, psi: 150, der: [[23,1],[40,.8],[60,.5],[80,.3]], Tmax: 80, pump: ['PP', 'PP'] },
+  ss:   { tr: '316 paslanmaz çelik Sch 40', en: '316 stainless steel Sch 40', gi: 1, eps: 0.046, kw: 16, pipes: STEEL40, S: 115, Tmax: 400, pump: ['316 paslanmaz çelik', '316 stainless steel'] },
+  pvdf: { tr: 'PVDF Sch 80', en: 'PVDF Sch 80', gi: 4, plastic: 1, eps: 0.0015, kw: 0.19, pipes: PLAST80, psi: 230, der: [[23,1],[40,.8],[60,.62],[80,.5],[100,.36],[120,.25]], Tmax: 120, pump: ['PVDF', 'PVDF'] },
+  ptfe: { tr: 'PTFE astarlı karbon çeliği', en: 'PTFE-lined carbon steel', gi: 3, eps: 0.0015, kw: 45, pipes: LINED, S: 110, cap: 16, Tmax: 200, pump: ['PFA / PTFE astarlı', 'PFA / PTFE lined'] }
+};
+const MAT_ORDER = ['cs', 'pvc', 'cpvc', 'pp', 'ss', 'pvdf', 'ptfe']; // maliyet sırası
+const GASK = [['NBR (Buna-N)', 7], ['EPDM', 5], ['FKM (Viton)', 6]];
+const WAT = [8.07131, 1730.63, 233.426];
+// gr: Graco uyum notları [karbon çeliği, 316 SS, PP, PTFE, PVDF, EPDM, FKM, Buna]; gn: kılavuzdaki satır.
+// pl: PVC/CPVC için üretici verisine dayalı sıcaklık sınırı (Graco'da yok). fb: kılavuzda veri yoksa genel uygulamada kabul edilen malzeme.
+const FLUIDS = [
+  { id: 'water', tr: 'Su', en: 'Water', X: 10.2, Y: 13.0, rhoF: T => 1001.1 - 0.0867 * T - 0.0035 * T * T, vp: { a: WAT }, cp: 4.18, k: 0.60, Tm: 0, haz: '', gr: 'DAAAAABA', gn: 'Water, Fresh', pl: { pvc: 45, cpvc: 82 } },
+  { id: 'h2so4_60', tr: 'Sülfürik asit, %60', en: 'Sulfuric acid, 60%', X: 10.2, Y: 21.3, rho: [1508, -1.06], vp: { p2: [50, 2320, 60, 3950] }, cp: 2.2, k: 0.44, Tm: -35, haz: 'c', gr: 'DDAAACAD', gn: 'Sulfuric Acid - 60%', pl: { cpvc: 82 } },
+  { id: 'h2so4_98', tr: 'Sülfürik asit, %98', en: 'Sulfuric acid, 98%', X: 7.0, Y: 24.8, rho: [1836, -1.0], vp: { c: 10 }, cp: 1.42, k: 0.35, Tm: 3, haz: 'c', gr: 'DADAACAD', gn: 'Sulfuric Acid - 95%' },
+  { id: 'hcl', tr: 'Hidroklorik asit, %31,5', en: 'Hydrochloric acid, 31.5%', X: 13.0, Y: 16.6, rho: [1157, -0.6], vp: { p2: [20, 4800, 50, 25000] }, cp: 2.5, k: 0.48, Tm: -45, haz: 'ct', gr: 'DDBAAABC', gn: 'Hydrochloric Acid - 30%', pl: { pvc: 50, cpvc: 80 } },
+  { id: 'hno3_60', tr: 'Nitrik asit, %60', en: 'Nitric acid, 60%', X: 10.8, Y: 17.0, rho: [1367, -1.3], vp: { p2: [20, 900, 60, 8000] }, cp: 2.7, k: 0.40, Tm: -22, haz: 'c', gr: 'DADAADA-', gn: 'Nitric Acid - 65%' },
+  { id: 'naoh50', tr: 'Sodyum hidroksit, %50', en: 'Sodium hydroxide, 50%', X: 3.2, Y: 25.8, rho: [1525, -0.7], vp: { p2: [25, 200, 80, 4300] }, cp: 3.2, k: 0.60, Tm: 12, haz: 'c', gr: 'DBAADBDD', gn: 'Sodium Hydroxide (50%)' },
+  { id: 'nh3_26', tr: 'Amonyak çözeltisi, %26', en: 'Ammonia solution, 26%', X: 10.1, Y: 13.9, rho: [904, -0.6], vp: { p2: [20, 48000, 40, 105000] }, cp: 4.3, k: 0.50, Tm: -60, haz: 'ct', gr: 'DAAAAABD', gn: 'Ammonium Hydroxide' },
+  { id: 'acetic', tr: 'Asetik asit, %100', en: 'Acetic acid, 100%', X: 12.1, Y: 14.2, rho: [1049, -1.1], vp: { a: [7.38782, 1533.313, 222.309] }, cp: 2.05, k: 0.17, Tm: 16.6, haz: 'cf', gr: 'DACAABDD', gn: 'Acetic Acid -- Glacial' },
+  { id: 'formic', tr: 'Formik asit', en: 'Formic acid', X: 10.7, Y: 15.8, rho: [1220, -1.2], vp: { a: [7.5818, 1699.2, 260.7] }, cp: 2.2, k: 0.27, Tm: 8.4, haz: 'c', gr: 'DCBAABCD', gn: 'Formic Acid' },
+  { id: 'cacl2', tr: 'Tuzlu su, CaCl₂ %25', en: 'Brine, CaCl₂ 25%', X: 6.6, Y: 15.9, rho: [1228, -0.45], vp: { w: 0.75 }, cp: 2.9, k: 0.55, Tm: -29, haz: '', gr: 'CCAAAAAA', gn: 'Calcium Chloride (Brine)', pl: { pvc: 50, cpvc: 82 } },
+  { id: 'nacl', tr: 'Tuzlu su, NaCl %25', en: 'Brine, NaCl 25%', X: 10.2, Y: 16.6, rho: [1189, -0.5], vp: { w: 0.78 }, cp: 3.3, k: 0.57, Tm: -18, haz: '', gr: 'DCAAAAAA', gn: 'Sodium Chloride', pl: { pvc: 50, cpvc: 82 } },
+  { id: 'acetone', tr: 'Aseton', en: 'Acetone', X: 14.5, Y: 7.2, rho: [790, -1.14], vp: { a: [7.02447, 1161.0, 224] }, cp: 2.16, k: 0.16, Tm: -95, haz: 'f', gr: 'AADADADD', gn: 'Acetone' },
+  { id: 'mek', tr: 'Metil etil keton', en: 'Methyl ethyl ketone', X: 13.9, Y: 8.6, rho: [805, -1.0], vp: { a: [7.06356, 1261.34, 221.97] }, cp: 2.2, k: 0.145, Tm: -86, haz: 'f', gr: 'AADADADD', gn: 'Methyl Ethyl Ketone (MEK)' },
+  { id: 'methanol', tr: 'Metanol, %100', en: 'Methanol, 100%', X: 12.4, Y: 10.5, rho: [792, -0.93], vp: { a: [8.08097, 1582.271, 239.726] }, cp: 2.53, k: 0.20, Tm: -98, haz: 'ft', gr: 'AAAAAADA', gn: 'Methanol' },
+  { id: 'ethanol', tr: 'Etil alkol, %100', en: 'Ethyl alcohol, 100%', X: 10.5, Y: 13.8, rho: [789, -0.86], vp: { a: [8.20417, 1642.89, 230.3] }, cp: 2.44, k: 0.17, Tm: -114, haz: 'f', gr: 'BAAAAAAC', gn: 'Ethanol (Ethyl Alcohol)' },
+  { id: 'ethanol95', tr: 'Etil alkol, %95', en: 'Ethyl alcohol, 95%', X: 9.8, Y: 14.3, rho: [804, -0.86], vp: { a: [8.20417, 1642.89, 230.3] }, cp: 2.6, k: 0.18, Tm: -110, haz: 'f', gr: 'BAAAAAAC', gn: 'Ethanol (Ethyl Alcohol)' },
+  { id: 'ethanol40', tr: 'Etil alkol, %40', en: 'Ethyl alcohol, 40%', X: 6.5, Y: 16.6, rho: [935, -0.75], vp: { p2: [20, 4400, 60, 33000] }, cp: 3.9, k: 0.38, Tm: -23, haz: 'f', gr: 'BAAAAAAC', gn: 'Ethanol (Ethyl Alcohol)' },
+  { id: 'ipa', tr: 'İzopropil alkol', en: 'Isopropyl alcohol', X: 8.2, Y: 16.0, rho: [786, -0.85], vp: { a: [8.11778, 1580.92, 219.61] }, cp: 2.6, k: 0.14, Tm: -89, haz: 'f', gr: 'ABAAABAC', gn: 'Alcohol: Isopropyl' },
+  { id: 'butanol', tr: 'Bütil alkol', en: 'Butyl alcohol', X: 8.6, Y: 17.2, rho: [810, -0.75], vp: { a: [7.47680, 1362.39, 178.77] }, cp: 2.4, k: 0.15, Tm: -89, haz: 'f', gr: 'BABAAAAC', gn: 'Alcohol: Butyl' },
+  { id: 'etac', tr: 'Etil asetat', en: 'Ethyl acetate', X: 13.7, Y: 9.1, rho: [900, -1.2], vp: { a: [7.10179, 1244.951, 217.881] }, cp: 1.94, k: 0.144, Tm: -84, haz: 'f', gr: 'ABCADBDD', gn: 'Ethyl Acetate' },
+  { id: 'ether', tr: 'Etil eter', en: 'Ethyl ether', X: 14.5, Y: 5.3, rho: [713, -1.15], vp: { a: [6.92032, 1064.07, 228.8] }, cp: 2.3, k: 0.13, Tm: -116, haz: 'f', gr: 'CBDABDDD', gn: 'Ethyl Ether' },
+  { id: 'benzene', tr: 'Benzen', en: 'Benzene', X: 12.5, Y: 10.9, rho: [879, -1.07], vp: { a: [6.90565, 1211.033, 220.79] }, cp: 1.74, k: 0.144, Tm: 5.5, haz: 'ft', gr: 'ABDABDBD', gn: 'Benzene' },
+  { id: 'toluene', tr: 'Toluen', en: 'Toluene', X: 13.7, Y: 10.4, rho: [867, -0.93], vp: { a: [6.95464, 1344.8, 219.482] }, cp: 1.7, k: 0.135, Tm: -95, haz: 'f', gr: 'AADAADCD', gn: 'Toluene (Toluol)' },
+  { id: 'xylene', tr: 'Ksilen (orto)', en: 'Xylene (ortho)', X: 13.5, Y: 12.1, rho: [880, -0.85], vp: { a: [6.99891, 1474.679, 213.686] }, cp: 1.75, k: 0.13, Tm: -25, haz: 'f', gr: 'BBDAADBD', gn: 'Xylene' },
+  { id: 'pentane', tr: 'Pentan', en: 'Pentane', X: 14.9, Y: 5.2, rho: [626, -1.0], vp: { a: [6.87632, 1075.78, 233.205] }, cp: 2.3, k: 0.11, Tm: -130, haz: 'f', gr: '-CDAADAA', gn: 'Pentane', fb: 'cs' },
+  { id: 'hexane', tr: 'Hekzan', en: 'Hexane', X: 14.7, Y: 7.0, rho: [659, -0.9], vp: { a: [6.87776, 1171.53, 224.366] }, cp: 2.26, k: 0.12, Tm: -95, haz: 'f', gr: 'AACAADAA', gn: 'Hexane' },
+  { id: 'octane', tr: 'Oktan', en: 'Octane', X: 13.7, Y: 10.0, rho: [703, -0.8], vp: { a: [6.91868, 1351.99, 209.155] }, cp: 2.22, k: 0.13, Tm: -57, haz: 'f', gr: '--------', gn: 'Octane', fb: 'cs' },
+  { id: 'kerosene', tr: 'Gazyağı (kerosen)', en: 'Kerosene', X: 10.2, Y: 16.9, rho: [810, -0.7], vp: { p2: [20, 300, 100, 9000] }, cp: 2.0, k: 0.14, Tm: -40, haz: 'f', gr: 'AADAADAA', gn: 'Kerosene' },
+  { id: 'ccl4', tr: 'Karbon tetraklorür', en: 'Carbon tetrachloride', X: 12.7, Y: 13.1, rho: [1594, -1.94], vp: { a: [6.87926, 1212.021, 226.409] }, cp: 0.85, k: 0.10, Tm: -23, haz: 't', gr: 'DBDAADAD', gn: 'Carbon Tetrachloride' },
+  { id: 'chcl3', tr: 'Kloroform', en: 'Chloroform', X: 14.4, Y: 10.2, rho: [1489, -1.86], vp: { a: [6.95465, 1170.966, 226.232] }, cp: 0.96, k: 0.12, Tm: -63, haz: 't', gr: 'BADABDAD', gn: 'Chloroform' },
+  { id: 'aniline', tr: 'Anilin', en: 'Aniline', X: 8.1, Y: 18.7, rho: [1022, -0.86], vp: { a: [7.32010, 1731.515, 206.049] }, cp: 2.1, k: 0.17, Tm: -6, haz: 't', gr: 'CBCACDDD', gn: 'Aniline' },
+  { id: 'phenol', tr: 'Fenol', en: 'Phenol', X: 6.9, Y: 20.8, rho: [1077, -0.9], vp: { a: [7.133, 1516.79, 174.95] }, cp: 2.3, k: 0.19, Tm: 41, haz: 'ct', gr: 'DBCABCAD', gn: 'Phenol (Carbolic Acid)' },
+  { id: 'glycol', tr: 'Etilen glikol', en: 'Ethylene glycol', X: 6.0, Y: 23.6, rho: [1113, -0.7], vp: { a: [8.0908, 2088.9, 203.5] }, cp: 2.4, k: 0.25, Tm: -13, haz: '', gr: 'BBAAAAAA', gn: 'Ethylene Glycol' },
+  { id: 'gly100', tr: 'Gliserol, %100', en: 'Glycerol, 100%', X: 2.0, Y: 30.0, rho: [1261, -0.63], vp: { c: 1 }, cp: 2.4, k: 0.285, Tm: 18, haz: '', gr: 'BAAAAAAA', gn: 'Glycerin (Glycerol)' },
+  { id: 'gly50', tr: 'Gliserol, %50', en: 'Glycerol, 50%', X: 6.9, Y: 19.6, rho: [1126, -0.5], vp: { w: 0.80 }, cp: 3.4, k: 0.42, Tm: -23, haz: '', gr: 'BAAAAAAA', gn: 'Glycerin (Glycerol)' }
+];
+// Çizelge 5.3: [id, tr, en, N, emme, basma (tek hat), basma (dallanan: ana hat)]
+const FITS = [
+  ['el90l', '90° standart uzun dirsek', '90° long-radius elbow', 23, 1, 2, 1],
+  ['gate', 'Sürgülü vana, tam açık', 'Gate valve, fully open', 7.5, 1, 0, 0],
+  ['chk', 'Çekvalf (oturmalı tip eşdeğeri)', 'Check valve (globe equivalent)', 300, 0, 1, 1],
+  ['union', 'Rakor / manşon', 'Union / coupling', 2, 6, 8, 4],
+  ['exit', 'Ani daralma (tank çıkışı)', 'Sudden contraction (tank outlet)', 25, 1, 0, 0],
+  ['entry', 'Ani genişleme (tank girişi)', 'Sudden expansion (tank inlet)', 50, 0, 1, 0],
+  ['el90s', '90° standart yarıçaplı dirsek', '90° standard-radius elbow', 35, 0, 0, 0],
+  ['el45', '45° standart dirsek', '45° standard elbow', 15, 0, 0, 0],
+  ['el90q', '90° kare dirsek', '90° square elbow', 75, 0, 0, 0],
+  ['teeF', 'Koldan T girişi', 'Tee, entry from leg', 60, 0, 0, 0],
+  ['teeT', 'Kola T girişi', 'Tee, entry into leg', 90, 0, 0, 0],
+  ['globe', 'Oturmalı tip vana, tam açık', 'Globe valve, fully open', 300, 0, 0, 0],
+  ['plug', 'Tapalı vana, açık', 'Plug valve, open', 18, 0, 0, 0]
+];
+const N_TEE = 90, N_CV = 300, N_ENT = 50, N_EL = 23, N_UN = 2;
+const GATE_N = [800, 200, 40, 7.5];
+const GATE_LBL = () => [L('1/4 açık', '1/4 open'), L('1/2 açık', '1/2 open'), L('3/4 açık', '3/4 open'), L('tam açık', 'fully open')];
+const EFQ = [25, 50, 75, 100, 125, 200], EFH = [15, 30, 45, 60, 75];
+const EFT = [[68.75, 70.44, 71.64, 72.61, 73.28, 73.99], [59.94, 62.69, 64.95, 66.82, 68.17, 69.08], [53.58, 57.05, 60.80, 62.93, 64.56, 65.86], [49.50, 53.98, 57.52, 60.51, 62.55, 64.04], [47.90, 52.90, 56.58, 59.65, 61.82, 63.64]];
+const MOTORS = [0.37, 0.55, 0.75, 1.1, 1.5, 2.2, 3, 4, 5.5, 7.5, 11, 15, 18.5, 22, 30, 37, 45, 55, 75, 90, 110, 132, 160, 200, 250, 315];
+const TSC = [[-30,1680],[-20,1594],[-10,1508],[0,1428],[10,1352],[20,1276],[30,1203],[40,1132],[50,1063],[60,997],[70,933],[80,871],[90,810],[100,751],[110,694],[120,640],[130,586],[140,534],[150,483],[160,432],[170,385],[180,338],[190,293],[200,247]];
+
+/* ====================== HESAP ====================== */
+function interp(tab, x) { let i = 0; while (i < tab.length - 2 && x > tab[i + 1][0]) i++; const [x0, y0] = tab[i], [x1, y1] = tab[i + 1]; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); }
+function nomoVisc(X, Y, T) { // Şekil D-2 nomografı, cP
+  const yt = interp(TSC, T), xt = 148 + (yt - 247) * 0.00977, yg = 1610 - 29.67 * Y, xg = 438 + 29.6 * X - (1610 - yg) * 0.0098;
+  let yv = yt, xv; for (let i = 0; i < 4; i++) { xv = 1045 + (yv - 253) * 0.00837; yv = yt + (yg - yt) * (xv - xt) / (xg - xt); }
+  return Math.pow(10, (1210 - yv) / 478.5);
+}
+const antoine = (a, T) => 133.322 * Math.pow(10, a[0] - a[1] / (a[2] + T));
+function vapP(vp, T) {
+  if (vp.a) return antoine(vp.a, T); if (vp.w) return vp.w * antoine(WAT, T); if (vp.c) return vp.c;
+  const [t1, p1, t2, p2] = vp.p2, b = Math.log(p2 / p1) / (1 / (t1 + 273.15) - 1 / (t2 + 273.15));
+  return p1 * Math.exp(b * (1 / (t1 + 273.15) - 1 / (T + 273.15)));
+}
+function props(I) {
+  if (I.fluid === 'custom') return { rho: I.cRho, mu: I.cMu, pv: I.cPv * 1000, cp: 2.0, k: 0.2, Tm: -273, custom: true };
+  const f = FLUIDS.find(x => x.id === I.fluid), mu = nomoVisc(f.X, f.Y, I.T);
+  return { rho: f.rhoF ? f.rhoF(I.T) : f.rho[0] + f.rho[1] * (I.T - 20), mu, pv: vapP(f.vp, I.T), cp: f.cp, k: f.k, Tm: f.Tm, fl: f, muOut: mu < 0.1 || mu > 100 || I.T < -30 || I.T > 200 };
+}
+function darcy(Re, rel) {
+  if (Re < 2100) return 64 / Math.max(Re, 1e-9);
+  let f = 0.25 / Math.pow(Math.log10(rel / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
+  for (let i = 0; i < 30; i++) f = Math.pow(-2 * Math.log10(rel / 3.7 + 2.51 / (Re * Math.sqrt(f))), -2);
+  return f;
+}
+function effChart(Q, H) {
+  const q = Math.min(200, Math.max(25, Q)), h = Math.min(75, Math.max(10, H));
+  let j = 0; while (j < EFQ.length - 2 && q > EFQ[j + 1]) j++;
+  const tq = (q - EFQ[j]) / (EFQ[j + 1] - EFQ[j]), col = EFT.map(r => r[j] + (r[j + 1] - r[j]) * tq);
+  let i = 0; while (i < EFH.length - 2 && h > EFH[i + 1]) i++;
+  return { eta: col[i] + (col[i + 1] - col[i]) * (h - EFH[i]) / (EFH[i + 1] - EFH[i]), out: Q < 25 || Q > 200 || H < 10 || H > 75 };
+}
+function rating(mat, pipe, T) { // izin verilen çalışma basıncı, bar
+  if (mat.der) { const row = mat.der.find(r => r[0] >= T) || mat.der[mat.der.length - 1], psi = mat.psi || pipe.psi; return { bar: psi * row[1] * 0.06895, psi, cT: row[1], Tt: row[0] }; }
+  const bar = 2 * mat.S * 0.875 * pipe.t / pipe.od * 10;
+  return { bar: mat.cap ? Math.min(bar, mat.cap) : bar };
+}
+// Malzeme uyum kararı: Graco notu (A her sıcaklıkta, B ≤ 40 °C), PVC/CPVC için üretici sınırı, yanıcıda plastik yok
+function decide(fl, mid, T) {
+  const m = MATS[mid], r = m.gi != null ? fl.gr[m.gi] : null;
+  if (T > m.Tmax) return { r, ok: false, why: L(`malzeme sınırı ${m.Tmax} °C`, `material limit ${m.Tmax} °C`) };
+  if (m.plastic && fl.haz.includes('f')) return { r, ok: false, why: L('yanıcı akışkanda plastik boru önerilmez', 'plastic pipe not recommended for flammables') };
+  if (m.gi == null) { const lim = fl.pl && fl.pl[mid]; return { r: null, ok: lim != null && T <= lim, why: lim == null ? L('bu akışkan için üretici verisi yok', 'no manufacturer data for this fluid') : L(`üretici verisi: ${lim} °C'ye kadar`, `manufacturer data: up to ${lim} °C`) }; }
+  if (r === '-') { const ok = fl.fb === mid; return { r, ok, why: ok ? L('kılavuzda veri yok; genel uygulamada kullanılır', 'no data in guide; commonly used in practice') : L('kılavuzda veri yok', 'no data in guide') }; }
+  if (r === 'A') return { r, ok: true, why: L('mükemmel', 'excellent') };
+  if (r === 'B') return { r, ok: T <= 40, why: T <= 40 ? L('iyi', 'good') : L('iyi, ancak 40 °C üstünde yalnızca A kabul edilir', 'good, but only A is accepted above 40 °C') };
+  return { r, ok: false, why: r === 'C' ? L('orta–zayıf', 'fair to poor') : L('önerilmez', 'not recommended') };
+}
+function gasketFor(fl) { if (!fl) return 'PTFE'; const g = GASK.find(x => fl.gr[x[1]] === 'A'); return g ? g[0] : 'PTFE'; }
+
+const mkSeg = (L_, N, pipe, mat) => { const D = pipe.id / 1000; return { L: L_, N, pipe, D, A: Math.PI * D * D / 4, rel: mat.eps / pipe.id }; };
+function flowSt(R, seg, Q) { const v = Q / seg.A, Re = R.rho * v * seg.D / R.muPa; return { v, Re, fD: R.fOv ? 8 * R.fOv : darcy(Re, seg.rel) }; }
+function loss(R, seg, Q, xN = 0) { if (Q <= 0) return 0; const s = flowSt(R, seg, Q); return s.fD * (seg.L + (seg.N + xN) * seg.D) / seg.D * R.rho * s.v * s.v / 2; }
+function sizeD(R, Q, I) {
+  const DoptT = 0.363 * Math.pow(Q, 0.45) * Math.pow(R.rho, 0.13), ReOpt = 4 * R.rho * Q / (Math.PI * DoptT * R.muPa), visc = ReOpt < 2100;
+  const Dopt = visc ? 0.275 * Math.pow(Q, 0.36) * Math.pow(R.mu, 0.18) : DoptT;
+  return { DoptT, ReOpt, visc, Dopt, Dtarget: I.diaMode === 'vel' ? Math.sqrt(4 * Q / (Math.PI * I.vT)) : Dopt };
+}
+const nearest = (pipes, D) => pipes.reduce((b, x) => Math.abs(x.id / 1000 - D) < Math.abs(b.id / 1000 - D) ? x : b);
+function heatSeg(R, seg, m, Lp, Tin, Ta, tIns) {
+  const cp = R.cp * 1000, Ri = seg.D / 2, Ro = seg.pipe.od / 2000, Rout = Ro + tIns, st = flowSt(R, seg, m / R.rho);
+  const Pr = cp * R.muPa / R.k, Nu = st.Re > 4000 ? 0.023 * Math.pow(st.Re, 0.8) * Math.pow(Pr, 0.3) : 3.66, hi = Nu * R.k / seg.D, ho = 10;
+  const Rtot = 1 / (hi * 2 * Math.PI * Ri) + Math.log(Ro / Ri) / (2 * Math.PI * R.mat.kw) + (tIns ? Math.log(Rout / Ro) / (2 * Math.PI * 0.045) : 0) + 1 / (ho * 2 * Math.PI * Rout);
+  const Tout = Lp > 0 ? Ta + (Tin - Ta) * Math.exp(-Lp / (Rtot * m * cp)) : Tin;
+  return { Tout, Ts: Ta + (Tin - Ta) * (1 / (ho * 2 * Math.PI * Rout)) / Rtot, q: m * cp * (Tin - Tout), U: 1 / (Rtot * 2 * Math.PI * Ro) };
+}
+function thermal(R, I, tIns) {
+  const a = heatSeg(R, R.suc, R.mdot, R.suc.L + R.main.L, I.T, I.Ta, tIns);
+  let q = a.q, worst = a.Tout; R.br.forEach(b => { const h = heatSeg(R, b.seg, b.Q * R.rho, b.seg.L, a.Tout, I.Ta, tIns); q += h.q; if (Math.abs(I.T - h.Tout) > Math.abs(I.T - worst)) worst = h.Tout; });
+  return { tIns, Ts: a.Ts, U: a.U, Tout: worst, q };
+}
+
+function design(I, matId) {
+  const R = { I, branched: I.mode === 'branch' }; Object.assign(R, props(I));
+  R.muPa = R.mu / 1000; R.P1 = I.P1 * ATM; R.zt = I.zt;
+  if (I.flowBasis === 'mass') { R.mdot = I.flow / 3600; R.Q = R.mdot / R.rho; } else { R.Q = I.flow / 3600; R.mdot = R.Q * R.rho; }
+  R.Qh = R.Q * 3600; R.matId = matId; R.mat = MATS[matId];
+  const pipes = R.mat.pipes;
+  R.sz = sizeD(R, R.Q, I);
+  R.pipe = I.diaMode === 'man' ? (pipes.find(x => x.nps === I.nps) || pipes[pipes.length - 1]) : nearest(pipes, R.sz.Dtarget);
+  // uzunluklar, dirsekler ve parçalar akış şemasından okunur
+  const LY = I.lay, count = {}, addCnt = (id, col, k) => { if (k) (count[id] = count[id] || [0, 0])[col] += k; };
+  const info = (key, col) => { const p = LY.runs[key].pts, g = []; let len = 0;
+    for (let i = 0; i < p.length - 1; i++) { const dy = p[i + 1].y - p[i].y, l = Math.abs(p[i + 1].x - p[i].x) + Math.abs(dy); if (l > 0) { g.push([l, dy]); len += l; } }
+    const corners = Math.max(0, g.length - 1), fs = LY.fits.filter(x => x.run === key); let N = corners * N_EL;
+    fs.forEach(x => { N += FN[x.type]; if (col != null) addCnt(x.type, col, 1); }); if (col != null) addCnt('el90l', col, corners);
+    return { L: len, N, geo: g, corners, nfit: fs.length }; };
+  const su = info('suc', 0); addCnt('exit', 0, 1);
+  R.Nsuc = su.N + FN.exit; R.sucGeo = su.geo; R.fOv = I.fOv > 0 ? I.fOv : 0;
+  R.suc = mkSeg(su.L, R.Nsuc, R.pipe, R.mat);
+  if (!R.branched) { // tek hat: basma hattı tek "kol" olarak modellenir, ana hat sıfır uzunlukta
+    const d = info('dis', 1); addCnt('entry', 1, 1); R.Ndis = d.N + FN.entry;
+    R.zj = 0; R.main = mkSeg(0, 0, R.pipe, R.mat); R.mainGeo = [];
+    R.br = [{ name: I.branches[0].name, frac: 1, P: I.P2 * ATM, z: I.zr, el: d.corners, nfit: d.nfit, seg: mkSeg(d.L, R.Ndis, R.pipe, R.mat), geo: d.geo, sz: R.sz }];
+  } else {
+    const mn = info('main', 1); R.Ndis = mn.N; R.zj = I.zj; R.main = mkSeg(mn.L, mn.N, R.pipe, R.mat); R.mainGeo = mn.geo;
+    const tot = I.branches.reduce((a, b) => a + b.pct, 0);
+    R.br = I.branches.map((b, i) => {
+      const bi = info('b' + i, null), frac = b.pct / tot, sz = sizeD(R, R.Q * frac, I), pipe = nearest(pipes, sz.Dtarget);
+      return { name: b.name, frac, P: b.P * ATM, z: b.z, el: bi.corners, nfit: bi.nfit, sz, seg: mkSeg(bi.L, N_TEE + N_CV + N_ENT + bi.N, pipe, R.mat), geo: bi.geo };
+    });
+  }
+  R.fitRows = FITS.filter(x => count[x[0]]).map(x => ({ id: x[0], tr: x[1], en: x[2], N: x[3], s: count[x[0]][0], d: count[x[0]][1] }));
+  R.cnt = {}; Object.keys(count).forEach(k => R.cnt[k] = count[k][0] + count[k][1]); R.nGateS = (count.gate || [0])[0];
+  R.Lpipe = R.suc.L + R.main.L + R.br.reduce((a, b) => a + b.seg.L, 0);
+  R.D = R.suc.D; Object.assign(R, flowSt(R, R.suc, R.Q)); R.f = R.fD / 8; R.rel = R.suc.rel;
+  R.regime = R.Re < 2100 ? 'lam' : R.Re < 4000 ? 'tra' : 'tur';
+  R.dPs = loss(R, R.suc, R.Q); R.dPm = loss(R, R.main, R.Q);
+  const rg = R.rho * G;
+  R.br.forEach(b => { b.Q = R.Q * b.frac; Object.assign(b, flowSt(R, b.seg, b.Q)); b.dP = loss(R, b.seg, b.Q); b.Hstat = (b.z - I.zt) + (b.P - R.P1) / rg; b.Hreq = b.Hstat + (R.dPs + R.dPm + b.dP) / rg; b.rate = rating(R.mat, b.seg.pipe, I.T); });
+  R.crit = R.br.reduce((a, b) => b.Hreq > a.Hreq ? b : a);
+  R.H = R.crit.Hreq; R.Hstat = R.crit.Hstat; R.pumpNeeded = R.H > 0.05; R.Hp = R.pumpNeeded ? R.H : 0;
+  R.br.forEach(b => { b.exc = Math.max(0, R.Hp - b.Hreq); b.Kv = b.exc / (b.Q * b.Q); b.cvFrac = R.branched ? N_CV * b.seg.D / (b.seg.L + b.seg.N * b.seg.D) : 0; });
+  R.dP = R.dPs + R.dPm + R.crit.dP; R.W = G * R.H;
+  R.N = R.Nsuc + R.main.N + R.crit.seg.N; R.Lt = R.suc.L + R.main.L + R.crit.seg.L + R.Nsuc * R.suc.D + R.main.N * R.main.D + R.crit.seg.N * R.crit.seg.D;
+  const ec = effChart(R.Qh, R.H); R.effOut = ec.out && !(I.eff > 0); R.eta = (I.eff > 0 ? I.eff : ec.eta) / 100;
+  R.Pw = R.pumpNeeded ? R.W * R.mdot / R.eta : 0; R.PkW = R.Pw / 1000;
+  R.motor = MOTORS.find(x => x >= 1.25 * R.PkW) || MOTORS[MOTORS.length - 1];
+  R.Qgpm = R.Q * 15850.3; R.Hft = Math.max(R.Hstat, 0.1) / 0.3048; R.NsP = I.rpm * Math.sqrt(R.Qgpm) / Math.pow(R.Hft, 0.75);
+  R.pumpType = !R.pumpNeeded ? 'none' : R.mu > 500 ? 'pd' : R.NsP < 400 ? 'pdlow' : R.NsP <= 4000 ? 'rad' : R.NsP <= 9000 ? 'mix' : 'ax';
+  R.npshr = I.npshr; R.npsha = R.P1 / rg + R.zt - R.dPs / rg - R.pv / rg;
+  R.Psuc = R.P1 + rg * R.zt - R.dPs; R.Pdis = R.Psuc + rg * R.Hp; R.Pj = R.Pdis - R.dPm - rg * R.zj;
+  R.Pmax = Math.max(R.Pdis, R.P1 + rg * Math.max(R.zt, 0), R.Pj);
+  R.rate = rating(R.mat, R.pipe, I.T);
+  R.br.forEach(b => { b.Pmax = Math.max(R.Pj, b.P, R.Pj + rg * (R.zj - b.z)); });
+  R.rateOk = R.rate.bar >= R.Pmax / 1e5 && R.br.every(b => b.rate.bar >= b.Pmax / 1e5);
+  R.th0 = thermal(R, I, 0);
+  const hot = R.th0.Ts > 60, cold = I.T < I.Ta - 10, freeze = R.Tm > I.Ta - 5 && R.Tm > -200, drop = Math.abs(I.T - R.th0.Tout) > 2;
+  R.insWhy = { hot, cold, freeze, drop }; R.insNeeded = hot || cold || freeze || drop;
+  if (R.insNeeded) R.th = [0.025, 0.04, 0.05, 0.08, 0.1].map(t => thermal(R, I, t)).find(t => (!hot || t.Ts <= 45) && Math.abs(I.T - t.Tout) <= 1) || thermal(R, I, 0.1);
+  R.kWh = R.PkW * I.hours; R.cost = R.kWh * I.price;
+  R.H0 = R.pumpNeeded ? 1.25 * R.H : 0; R.kp = R.pumpNeeded ? (R.H0 - R.H) / (R.Q * R.Q) : 0; // temsilî pompa eğrisi
+  // kitap bağıntısı (Towler & Sinnott, Denk. 20.30/20.31): yalnız çelik borular için karşılaştırma
+  if (matId === 'cs' || matId === 'ss') { const c = matId === 'cs' ? [0.664, 0.51, -0.36, 0.534, 0.43, -0.30] : [0.550, 0.49, -0.35, 0.465, 0.43, -0.31]; let d = c[0] * Math.pow(R.mdot, c[1]) * Math.pow(R.rho, c[2]); if (d > 0.225) d = c[3] * Math.pow(R.mdot, c[4]) * Math.pow(R.rho, c[5]); R.Dbook = d; }
+  return R;
+}
+function compute(I) {
+  const fl = I.fluid === 'custom' ? null : FLUIDS.find(f => f.id === I.fluid);
+  let cands;
+  if (I.matMode !== 'auto') cands = [I.matMode];
+  else if (!fl) cands = ['cs'];
+  else { cands = MAT_ORDER.filter(m => decide(fl, m, I.T).ok); if (!cands.length) cands = ['ptfe']; }
+  let R; for (const c of cands) { R = design(I, c); if (R.rateOk) break; }
+  R.auto = I.matMode === 'auto'; R.dec = fl ? decide(fl, R.matId, I.T) : { ok: true, r: null, why: '' };
+  return R;
+}
+// Simülasyon: pompa eğrisi ile boru ağının çözümü. E: T ayrımındaki piyezometrik yük (m)
+function network(R, n, gIdx, opens) {
+  const rg = R.rho * G, gN = GATE_N[gIdx] - 7.5, E0 = R.P1 / rg + R.zt, Ed = R.br.map(b => b.P / rg + b.z);
+  const hb = (i, Q) => { const b = R.br[i], l = loss(R, b.seg, Q) / rg, cv = l * b.cvFrac, o2 = opens[i] * opens[i]; return l - cv + (cv + b.Kv * Q * Q) / o2; }; // vana açıklığı ayar vanasının kendi kaybını da büyütür
+  const bQ = (i, h) => { if (h <= 0 || opens[i] <= 0) return 0; let lo = 0, hi = R.br[i].Q, k = 0; while (hb(i, hi) < h && k++ < 40) hi *= 1.6; for (let j = 0; j < 40; j++) { const m = (lo + hi) / 2; hb(i, m) < h ? lo = m : hi = m; } return (lo + hi) / 2; };
+  const qs = E => R.br.map((b, i) => bQ(i, E - Ed[i])), sum = a => a.reduce((x, y) => x + y, 0);
+  const up = Q => (loss(R, R.suc, Q, R.nGateS * gN) + loss(R, R.main, Q)) / rg;
+  const Hp = Q => n * n * R.H0 - R.kp * Q * Q;
+  return { rg, E0, Ed, qs, sum, up, Hp, gN };
+}
+function operate(R, n, gIdx, opens) {
+  const W = network(R, n, gIdx, opens), act = W.Ed.filter((e, i) => opens[i] > 0);
+  const res = E => { const Q = W.sum(W.qs(E)); return W.E0 + W.Hp(Q) - W.up(Q) - E; };
+  let lo = act.length ? Math.min(...act) : 0, hi = W.E0 + n * n * R.H0, Q = 0, Qi = R.br.map(() => 0), E = lo;
+  if (act.length && res(lo) > 0) { for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; res(m) > 0 ? lo = m : hi = m; } E = (lo + hi) / 2; Qi = W.qs(E); Q = W.sum(Qi); }
+  const st = Q > 0 ? flowSt(R, R.suc, Q) : { v: 0, Re: 0 }, dPs = loss(R, R.suc, Q, R.nGateS * W.gN), dPm = loss(R, R.main, Q);
+  return { Q, Qi, E, v: st.v, Re: st.Re, dPs, dPm, Hp: Q > 0 ? W.Hp(Q) : 0, npsha: R.P1 / W.rg + R.zt - dPs / W.rg - R.pv / W.rg, npshr: R.pumpNeeded ? R.npshr * Math.max(0.5, Math.pow(Q / R.Q, 1.5)) : 0, bv: Qi.map((q, i) => q / R.br[i].seg.A) };
+}
+function sysCurve(R, gIdx, opens, Qmax) {
+  const W = network(R, 1, gIdx, opens), act = W.Ed.filter((e, i) => opens[i] > 0); if (!act.length) return [];
+  const lo = Math.min(...act); let span = 1, k = 0; while (W.sum(W.qs(lo + span)) < Qmax && k++ < 40) span *= 1.6;
+  const pts = []; for (let i = 0; i <= 40; i++) { const E = lo + span * Math.pow(i / 40, 2), Q = W.sum(W.qs(E)); pts.push([Q * 3600, E - W.E0 + W.up(Q)]); }
+  return pts;
+}
+
+/* ====================== GİRDİLER ====================== */
+let mode = 'single';
+// hedeflerin adı, debi payı ve basıncı şemadaki hedef nesnelerinde tutulur (lay().dests)
+const numIds = ['T', 'flow', 'P1', 'P2', 'zt', 'zr', 'Ldh', 'Lsh', 'Lm', 'zj', 'vT', 'npshr', 'Ta', 'hours', 'price', 'eff', 'fOv', 'cRho', 'cMu', 'cPv'];
+function readInputs() { // geometri akış şemasından okunur; kotlar pompaya göredir
+  const l = lay(), py = l.pump.y;
+  const I = { mode, fluid: $('fluid').value, flowBasis: $('flowBasis').value, matMode: $('matMode').value, diaMode: $('diaMode').value, nps: $('nps').value, rpm: +$('rpm').value, cur: $('cur').value, lay: JSON.parse(JSON.stringify(l)) };
+  numIds.forEach(id => I[id] = parseFloat($(id).value));
+  I.zt = l.tank.y - py; I.zr = l.dests[0].y - py; I.P2 = l.dests[0].P; I.zj = l.tee ? l.tee.y - py : 0;
+  I.branches = l.dests.map(d => ({ name: d.name, pct: d.pct, P: d.P, z: d.y - py }));
+  return I;
+}
+function validate(I) {
+  const bad = [], need = (c, tr, en) => { if (!c) bad.push(L(tr, en)); };
+  need(isFinite(I.T), 'Sıcaklık girilmeli.', 'Temperature is required.');
+  need(I.flow > 0, 'Debi sıfırdan büyük olmalı.', 'Flow rate must be greater than zero.');
+  need(I.P1 > 0 && isFinite(I.zt), 'Kaynak tank bilgileri eksik.', 'Source tank data is incomplete.');
+  if (I.mode === 'single') { need(I.P2 > 0 && isFinite(I.zr), 'Hedef bilgileri eksik.', 'Destination data is incomplete.'); need(Object.values(I.lay.runs).some(r => r.pts.length > 1 && (r.pts[0].x !== r.pts[r.pts.length - 1].x || r.pts[0].y !== r.pts[r.pts.length - 1].y)), 'Boru uzunluğu sıfır olamaz.', 'Pipe length cannot be zero.'); }
+  else { need(isFinite(I.zj), 'Ana hat bilgileri eksik.', 'Main line data is incomplete.'); need(I.branches.every(b => b.pct > 0 && b.P > 0 && isFinite(b.z)), 'Her kol için debi payı, basınç, kot ve uzunluk girilmeli.', 'Each branch needs a flow share, pressure, elevation and length.'); }
+  need(I.diaMode !== 'vel' || I.vT > 0, 'İstenen hız sıfırdan büyük olmalı.', 'Target velocity must be greater than zero.');
+  need(I.fluid !== 'custom' || (I.cRho > 0 && I.cMu > 0 && I.cPv >= 0), 'Özel akışkan için yoğunluk, viskozite ve buhar basıncı girilmeli.', 'Custom fluid needs density, viscosity and vapor pressure.');
+  need(isFinite(I.Ta) && I.npshr >= 0, 'Ortam sıcaklığı ve gereken NPEY girilmeli.', 'Ambient temperature and NPSH required are needed.');
+  return bad;
+}
+const FIC = { el: '<path d="M4 3v7a6 6 0 0 0 6 6h7"/>', va: '<path d="M3 6l14 8V6L3 14z"/>', ch: '<path d="M3 8l14 7V8L3 15zM7 4h6m-2-2l2 2-2 2"/>', un: '<path d="M2 10h5M13 10h5M7 6h6v8H7z"/>', tk: '<path d="M3 4h8v12H3zM11 10h7"/>', te: '<path d="M2 7h16M10 7v10"/>' };
+const fitIcon = id => `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${FIC[id.startsWith('el') ? 'el' : id === 'chk' ? 'ch' : id === 'union' ? 'un' : id === 'exit' || id === 'entry' ? 'tk' : id.startsWith('tee') ? 'te' : 'va']}</svg>`;
+function renderFitMenu(R) {
+  const rows = R.fitRows.map(r => `<tr><td><span class="fi">${fitIcon(r.id)}</span>${L(r.tr, r.en)}</td><td class="n">${fmt(r.N, r.N % 1 ? 1 : 0)}</td><td class="n">${r.s}</td><td class="n">${r.d}</td></tr>`);
+  if (R.branched) R.br.forEach((b, i) => rows.push(`<tr><td><span class="fi" style="color:${BCOL[i]}">${fitIcon('tee')}</span>${esc(b.name)}</td><td class="n" colspan="3">${L(`${b.el} dirsek, ${b.nfit} parça + T, ayar vanası, giriş`, `${b.el} elbows, ${b.nfit} fittings + tee, control valve, inlet`)}</td></tr>`));
+  $('fitT').innerHTML = `<tr><th>${L('Eleman', 'Fitting')}</th><th class="n">N</th><th class="n">${L('Emme', 'Suct.')}</th><th class="n">${R.branched ? L('Ana hat', 'Main') : L('Basma', 'Disch.')}</th></tr>` + rows.join('');
+}
+function buildBranches() {
+  const l = lay(), py = l.pump ? l.pump.y : 0, tx = l.tee ? l.tee.x : 0, r = v => +v.toFixed(3);
+  $('brT').innerHTML = `<tr><th>${L('Kol', 'Branch')}</th><th class="n">%</th><th class="n">atm</th><th class="n">${L('kot m', 'elev. m')}</th><th class="n">${L('yatay m', 'horiz. m')}</th><th></th></tr>` +
+    l.dests.map((d, i) => `<tr><td><input data-b="${i}" data-k="name" value="${esc(d.name)}"></td>` + [['pct', d.pct], ['P', d.P], ['z', r(d.y - py)], ['L', r(d.x - tx)]].map(([k, v]) => `<td style="width:54px"><input data-b="${i}" data-k="${k}" type="number" step="any" value="${v}"></td>`).join('') + `<td>${l.dests.length > 2 ? `<button type="button" class="x" data-del="${i}" aria-label="${L('Kolu sil', 'Remove branch')}">×</button>` : ''}</td></tr>`).join('');
+  $('bAdd').hidden = l.dests.length >= 4;
+}
+function fillSelects() {
+  const keep = (id, html) => { const s = $(id), v = s.value; s.innerHTML = html; if (v && [...s.options].some(o => o.value === v)) s.value = v; };
+  keep('fluid', FLUIDS.slice().sort((a, b) => L(a.tr, a.en).localeCompare(L(b.tr, b.en), lang)).map(f => `<option value="${f.id}">${L(f.tr, f.en)}</option>`).join('') + `<option value="custom">${L('Özel akışkan (özellikleri ben gireceğim)', 'Custom fluid (I will enter properties)')}</option>`);
+  keep('matMode', `<option value="auto">${L('Otomatik öner', 'Recommend')}</option>` + MAT_ORDER.map(k => `<option value="${k}">${L(MATS[k].tr, MATS[k].en)}</option>`).join(''));
+  fillNps();
+}
+function fillNps() {
+  const m = $('matMode').value, pipes = (MATS[m] || MATS[lastR ? lastR.matId : 'cs']).pipes, s = $('nps'), v = s.value;
+  s.innerHTML = pipes.map(p => `<option value="${p.nps}">${p.nps}" (Di ${fmt(p.id, 1)} mm)</option>`).join('');
+  if ([...s.options].some(o => o.value === v)) s.value = v; else if (lastR) s.value = lastR.pipe.nps;
+}
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.title = L('Boru Hattı Tasarım Programı', 'Pipeline Design Program');
+  document.querySelectorAll('[data-tr]').forEach(e => { if (!e.firstElementChild) { e.textContent = e.dataset[lang]; return; } if (e.firstChild.nodeType !== 3) e.prepend(document.createTextNode('')); e.firstChild.nodeValue = e.dataset[lang]; });
+  $('bLang').textContent = lang === 'tr' ? 'English' : 'Türkçe';
+  buildBranches(); fillSelects(); renderHelp();
+}
+function setModeUI() { // tek hat / dallanan: şemadaki hedef sayısından belirlenir
+  $('mSingle').classList.toggle('on', mode === 'single'); $('mBranch').classList.toggle('on', mode === 'branch');
+  $('singleBox').hidden = mode !== 'single'; $('branchBox').hidden = mode !== 'branch'; $('skS').toggleAttribute('hidden', mode !== 'single'); $('skB').toggleAttribute('hidden', mode !== 'branch');
+}
+
+let lastR = null, sim = { n: 1, v: 3, open: [1], run: true }, op = null, paths = [];
+function update() {
+  if (!drag) fitView();
+  $('customBox').hidden = $('fluid').value !== 'custom';
+  $('vRow').hidden = $('diaMode').value !== 'vel'; $('npsRow').hidden = $('diaMode').value !== 'man';
+  const l0 = lay(), miss = [!l0.tank && L('besleme tankı', 'feed tank'), !l0.pump && L('pompa', 'pump'), !l0.dests.length && L('hedef', 'destination')].filter(Boolean);
+  if (miss.length) { // şema eksikken hesap yapılmaz; düzenleyici çalışmaya devam eder
+    lastR = null; op = null; paths = []; kpiPrev = []; drawPfd(null); $('kpis').innerHTML = ''; $('sumNote').textContent = ''; $('tbBadge').innerHTML = '<span class="badge w">1</span>';
+    $('msgs').innerHTML = `<div class="msg w">${L('Şema eksik: ', 'The diagram is incomplete: ') + miss.join(', ') + L('. Akış şeması sekmesinde soldaki kutudan sürükleyip ekleyin.', '. Drag them in from the box on the left of the flow diagram tab.')}</div>`;
+    $('simState').textContent = L('Şema eksik', 'Diagram incomplete'); $('simState').style.color = 'var(--warn)'; $('simTxt').textContent = L('Eksik: ', 'Missing: ') + miss.join(', '); $('hud').textContent = ''; return;
+  }
+  const I = readInputs(), bad = validate(I);
+  if (bad.length) { $('msgs').innerHTML = bad.map(b => `<div class="msg e">${b}</div>`).join(''); $('sumNote').textContent = L('girdiler eksik', 'inputs incomplete'); $('tbBadge').innerHTML = `<span class="badge">${bad.length}</span>`; showTab('sum'); return; }
+  lastR = compute(I);
+  if (sim.open.length !== lastR.br.length) sim.open = lastR.br.map(() => 1);
+  if ($('diaMode').value !== 'man') { fillNps(); $('nps').value = lastR.pipe.nps; }
+  renderAll();
+}
+const fluidName = R => R.fl ? L(R.fl.tr, R.fl.en) : L('Özel akışkan', 'Custom fluid');
+function renderAll() {
+  const R = lastR; if (!R) return; const I = R.I;
+  $('d1').textContent = `${fluidName(R)} · ${fmt(I.T, 0)} °C · ${sig(I.flow, 5)} ${I.flowBasis === 'mass' ? 'kg/h' : 'm³/h'}`;
+  $('d2').textContent = R.branched ? L(`Dallanan · ${R.br.length} kol`, `Branched · ${R.br.length} branches`) : L(`Tek hat · ${fmt(R.Lpipe, 0)} m boru`, `Single line · ${fmt(R.Lpipe, 0)} m of pipe`);
+  $('d3').textContent = `${L(R.mat.tr, R.mat.en)} · ${R.pipe.nps}"`;
+  $('d4').textContent = L(`eşdeğer çap sayısı: emme ${fmt(R.Nsuc, 1)}, ${R.branched ? 'ana hat' : 'basma'} ${fmt(R.Ndis, 1)}`, `equivalent diameters: suction ${fmt(R.Nsuc, 1)}, ${R.branched ? 'main' : 'discharge'} ${fmt(R.Ndis, 1)}`);
+  $('d5').textContent = `${I.rpm} rpm · NPEY ${fmt(I.npshr, 1)} m · ${fmt(I.Ta, 0)} °C`;
+  renderKpis(R); renderFitMenu(R); renderSummary(R); renderRecs(R); renderSteps(R); drawPfd(R); renderSim(); drawVel(R);
+}
+function kpiData(R) {
+  return [[L('Ana boru', 'Main pipe'), `${R.pipe.nps}"`, `Di ${fmt(R.pipe.id, 1)} mm`], [L('Hacimsel debi', 'Volumetric flow'), sig(R.Qh, 4), 'm³/h'], [L('Akış hızı', 'Velocity'), fmt(R.v, 2), 'm/s'],
+    ['Reynolds', fmt(R.Re, 0), R.regime === 'lam' ? L('laminer', 'laminar') : R.regime === 'tra' ? L('geçiş', 'transition') : L('türbülanslı', 'turbulent')],
+    [L('Sürtünme kaybı', 'Friction loss'), fmt(R.dP / 1000, 2), 'kPa'], [L('Basma yüksekliği', 'Total head'), R.pumpNeeded ? fmt(R.H, 2) : '–', 'm'],
+    [L('Pompa gücü', 'Pump power'), R.pumpNeeded ? fmt(R.PkW, 2) : '–', `kW · η %${fmt(R.eta * 100, 0)}`], [L('NPEY mevcut', 'NPSH available'), fmt(R.npsha, 2), `m (≥ ${fmt(R.npshr, 1)})`]];
+}
+let kpiPrev = [];
+function renderKpis(R) { const d = kpiData(R); $('kpis').innerHTML = d.map((k, i) => `<div class="kpi${kpiPrev.length && kpiPrev[i] !== k[1] ? ' flash' : ''}"><span>${k[0]}</span><b>${k[1]}</b> <i>${k[2]}</i></div>`).join(''); kpiPrev = d.map(k => k[1]); }
+function branchRows(R) { return R.br.map(b => [esc(b.name) + (b === R.crit ? ' ★' : ''), sig(b.Q * 3600, 3), `${b.seg.pipe.nps}" (${fmt(b.seg.pipe.id, 1)} mm)`, fmt(b.v, 2), fmt(b.Re, 0), fmt(b.dP / 1000, 2), fmt(b.Hreq, 2), fmt(b.exc * R.rho * G / 1000, 1)]); }
+const branchHead = () => [L('Kol', 'Branch'), 'Q, m³/h', L('Boru', 'Pipe'), 'v, m/s', 'Re', L('ΔP kol, kPa', 'ΔP branch, kPa'), L('Gereken H, m', 'Required H, m'), L('Vanada kısılan, kPa', 'Throttled at valve, kPa')];
+function propRows(R) {
+  const src = R.custom ? L('kullanıcı girdisi', 'user input') : null;
+  return [[L('Yoğunluk', 'Density'), `${fmt(R.rho, 1)} kg/m³`, src || L('literatür, sıcaklıkla doğrusal', 'literature, linear in temperature')],
+    [L('Viskozite', 'Viscosity'), `${sig(R.mu, 3)} cP`, src || `${L('Şekil D-2 nomografı', 'Fig. D-2 nomograph')}, X = ${fmt(R.fl.X, 1)}, Y = ${fmt(R.fl.Y, 1)}`],
+    [L('Buhar basıncı', 'Vapor pressure'), `${sig(R.pv / 1000, 3)} kPa`, src || (R.fl.vp.a ? L('Antoine denklemi', 'Antoine equation') : L('yaklaşık (çözelti)', 'approximate (solution)'))],
+    [L('Özgül ısı', 'Specific heat'), `${fmt(R.cp, 2)} kJ/kg·K`, R.custom ? L('varsayım', 'assumed') : L('literatür', 'literature')],
+    [L('Isıl iletkenlik', 'Thermal conductivity'), `${fmt(R.k, 2)} W/m·K`, R.custom ? L('varsayım', 'assumed') : L('literatür', 'literature')]];
+}
+function messages(R) {
+  const m = [], I = R.I, add = (lv, tr, en) => m.push([lv, L(tr, en)]);
+  if (R.fl && !R.dec.ok) add('e', `${L(R.mat.tr, R.mat.en)} bu akışkan ve sıcaklık için uygun değil (${R.dec.why}). "Öneriler ve malzeme" sekmesindeki uyum tablosuna bakın.`, `${R.mat.en} is not suitable for this fluid and temperature (${R.dec.why}). See the compatibility table in the recommendations tab.`);
+  if (R.custom) add('w', 'Özel akışkanda malzeme uyumunu siz doğrulayın.', 'For a custom fluid, verify material compatibility yourself.');
+  if (R.rate.bar < R.Pmax / 1e5) add('e', `Ana hattaki en yüksek basınç ${fmt(R.Pmax / 1e5, 2)} bar, borunun izin verilen basıncını (${fmt(R.rate.bar, 2)} bar) aşıyor.`, `Maximum main-line pressure ${fmt(R.Pmax / 1e5, 2)} bar exceeds the pipe's allowable pressure (${fmt(R.rate.bar, 2)} bar).`);
+  else add('o', `Basınç dayanımı yeterli: en yüksek ${fmt(R.Pmax / 1e5, 2)} bar < izin verilen ${fmt(R.rate.bar, 2)} bar.`, `Pressure rating is adequate: maximum ${fmt(R.Pmax / 1e5, 2)} bar < allowable ${fmt(R.rate.bar, 2)} bar.`);
+  R.br.forEach(b => { if (b.rate.bar < b.Pmax / 1e5) add('e', `${b.name}: kol borusunun izin verilen basıncı (${fmt(b.rate.bar, 2)} bar) yetersiz.`, `${b.name}: the branch pipe's allowable pressure (${fmt(b.rate.bar, 2)} bar) is insufficient.`); });
+  if (R.pv >= R.P1) add('e', `Buhar basıncı (${fmt(R.pv / 1e5, 2)} bar) tank basıncına ulaşıyor: akışkan bu sıcaklıkta kaynar.`, `Vapor pressure (${fmt(R.pv / 1e5, 2)} bar) reaches the tank pressure: the fluid boils at this temperature.`);
+  else if (R.pumpNeeded && R.npsha < R.npshr) add('e', `Kavitasyon riski: NPEY mevcut ${fmt(R.npsha, 2)} m, gereken ${fmt(R.npshr, 1)} m. Tankı yükseltin, emme hattını kısaltın ya da çapı büyütün.`, `Cavitation risk: NPSH available ${fmt(R.npsha, 2)} m, required ${fmt(R.npshr, 1)} m. Raise the tank, shorten the suction line or increase its size.`);
+  else if (R.pumpNeeded) add(R.npsha < R.npshr + 0.6 ? 'w' : 'o', `NPEY mevcut ${fmt(R.npsha, 2)} m, gereken ${fmt(R.npshr, 1)} m${R.npsha < R.npshr + 0.6 ? ': pay çok az.' : ': kavitasyon beklenmez.'}`, `NPSH available ${fmt(R.npsha, 2)} m, required ${fmt(R.npshr, 1)} m${R.npsha < R.npshr + 0.6 ? ': margin is very small.' : ': no cavitation expected.'}`);
+  if (!R.pumpNeeded) add('o', 'Mevcut kot ve basınç farkı akışı kendiliğinden sağlıyor; pompa gerekmez, debi vana ile ayarlanır.', 'The available elevation and pressure difference drive the flow; no pump is needed and flow is set by a valve.');
+  if (R.branched) add('o', `Pompa en zor kola (${R.crit.name}) göre seçildi; diğer kollardaki fazla basınç ayar vanalarında kısılır.`, `The pump is sized for the hardest branch (${R.crit.name}); excess pressure in the other branches is throttled at their control valves.`);
+  if (R.regime !== 'lam' && R.v > 3) add('w', `Akış hızı ${fmt(R.v, 2)} m/s; sıvılar için önerilen 1–3 m/s aralığının üstünde.`, `Velocity ${fmt(R.v, 2)} m/s is above the recommended 1–3 m/s for liquids.`);
+  if (R.regime !== 'lam' && R.v < 0.5) add('w', `Akış hızı ${fmt(R.v, 2)} m/s; boru gereğinden büyük olabilir.`, `Velocity ${fmt(R.v, 2)} m/s; the pipe may be oversized.`);
+  if (R.regime === 'lam') add('w', `Akış laminer (Re = ${fmt(R.Re, 0)}).`, `Flow is laminar (Re = ${fmt(R.Re, 0)}).`);
+  if (R.muOut) add('w', 'Viskozite nomografın ölçek aralığı (0,1–100 cP, −30…200 °C) dışında; değer uzatılarak bulundu.', 'Viscosity lies outside the nomograph range (0.1–100 cP, −30…200 °C); the value is extrapolated.');
+  if (I.T <= R.Tm) add('e', `Sıcaklık akışkanın donma noktasının (${fmt(R.Tm, 0)} °C) altında.`, `Temperature is below the fluid's freezing point (${fmt(R.Tm, 0)} °C).`);
+  if (R.pumpNeeded && R.effOut) add('w', "Debi ya da yükseklik Şekil 5.13'ün aralığı (25–200 m³/h, 10–75 m) dışında; verim en yakın sınırdan alındı.", 'Flow or head is outside the range of Fig. 5.13 (25–200 m³/h, 10–75 m); efficiency taken at the nearest limit.');
+  const hz = R.fl ? R.fl.haz : '';
+  if (hz.includes('f')) add('w', 'Yanıcı akışkan: hattı topraklayın, Ex-proof ekipman kullanın.', 'Flammable fluid: ground the line and use explosion-proof equipment.');
+  if (hz.includes('c')) add('w', 'Aşındırıcı akışkan: flanşlara sıçrama koruyucu, sahaya göz duşu koyun.', 'Corrosive fluid: fit flange spray guards and provide an eyewash station.');
+  return m;
+}
+function renderSummary(R) {
+  const ms = messages(R), ne = ms.filter(x => x[0] === 'e').length, nw = ms.filter(x => x[0] === 'w').length;
+  $('sumNote').textContent = `${fluidName(R)} · ${fmt(R.I.T, 1)} °C`;
+  $('msgs').innerHTML = ms.map(([lv, t]) => `<div class="msg ${lv === 'o' ? '' : lv}">${esc(t)}</div>`).join('');
+  $('tbBadge').innerHTML = ne ? `<span class="badge">${ne}</span>` : nw ? `<span class="badge w">${nw}</span>` : '';
+  $('brCard').hidden = !R.branched;
+  if (R.branched) $('brRes').innerHTML = `<tr>${branchHead().map((h, i) => `<th${i && i !== 2 ? ' class="n"' : ''}>${h}</th>`).join('')}</tr>` + branchRows(R).map(r => `<tr>${r.map((c, i) => `<td${i && i !== 2 ? ' class="n"' : ''}>${c}</td>`).join('')}</tr>`).join('');
+  $('propT').innerHTML = propRows(R).map(r => `<tr><td>${r[0]}</td><td class="n">${r[1]}</td><td style="color:var(--mute)">${r[2]}</td></tr>`).join('');
+}
+function recData(R) {
+  const mat = L(R.mat.tr, R.mat.en), haz = R.fl ? R.fl.haz : '', I = R.I, rows = [], gk = gasketFor(R.fl), sealless = /[ct]/.test(haz);
+  const how = I.diaMode === 'auto' ? L(`ekonomik çapa (${fmt(R.sz.Dopt * 1000, 0)} mm) en yakın standart boyut`, `nearest standard size to the economic diameter (${fmt(R.sz.Dopt * 1000, 0)} mm)`) : I.diaMode === 'vel' ? L(`istenen hız için gereken çapa (${fmt(R.sz.Dtarget * 1000, 0)} mm) en yakın standart boyut`, `nearest standard size to the diameter needed for the target velocity (${fmt(R.sz.Dtarget * 1000, 0)} mm)`) : L('çap elle seçildi', 'size chosen manually');
+  rows.push([R.branched ? L('Ana boru', 'Main pipe') : L('Boru', 'Pipe'), `${mat}, ${R.pipe.nps}" (Di ${fmt(R.pipe.id, 2)} mm, ${L('et', 'wall')} ${fmt(R.pipe.t, 2)} mm)`,
+    (R.fl ? (R.auto ? L('Uyumlu malzemelerin en ekonomiği', 'Most economical compatible material') : L('Malzeme elle seçildi', 'Material chosen manually')) + ` (${R.dec.r ? 'Graco: ' + R.dec.r + ', ' : ''}${R.dec.why}); ` : '') + how + '.']);
+  if (R.branched) rows.push([L('Kol boruları', 'Branch pipes'), R.br.map(b => `${esc(b.name)}: ${b.seg.pipe.nps}"`).join(' · '), L('Her kol kendi debisine göre aynı yöntemle boyutlandırılır.', 'Each branch is sized for its own flow with the same method.')]);
+  if (R.cnt.gate) rows.push([L('Kapama vanası', 'Isolation valve'), L(`Sürgülü vana, ${R.pipe.nps}", gövde boru malzemesiyle aynı`, `Gate valve, ${R.pipe.nps}", body same as pipe material`), L('Tam açıkken düz akış yolu verir (N = 7,5); pompa emişinde en düşük kayıp ve bakımda tam kapama.', 'Straight-through path when open (N = 7.5); lowest loss on pump suction and tight shut-off for maintenance.')]);
+  if (R.cnt.chk) rows.push([L('Çekvalf', 'Check valve'), L(`Tek yönlü vana, ${R.pipe.nps}", pompa çıkışında`, `Non-return valve, ${R.pipe.nps}", at pump discharge`), L('Pompa durduğunda hedeften geri akışı önler.', 'Prevents back-flow from the destination when the pump stops.')]);
+  if (R.branched) rows.push([L('Ayar vanaları', 'Control valves'), L('Her kolda bir oturmalı tip (glob) vana, kol çapında', 'One globe valve per branch, branch size'), L('Debinin kollar arasında istenen oranda paylaşılması için fazla basıncı kısar (N = 300).', 'Throttles excess pressure so the flow splits in the required ratio (N = 300).')]);
+  rows.push([L('Conta', 'Gasket'), gk, R.fl ? (gk === 'PTFE' ? L('Graco kılavuzunda elastomerlerin hiçbiri A değil; PTFE bu akışkana dayanıklı.', 'No elastomer is rated A in the Graco guide; PTFE resists this fluid.') : L('Graco kılavuzunda A notu alan en ekonomik elastomer.', 'Most economical elastomer rated A in the Graco guide.')) : L('Akışkan bilinmediği için en güvenli seçim.', 'Safest choice for an unknown fluid.')]);
+  const pt = { none: [L('Pompa gerekmez', 'No pump needed'), L('Mevcut kot ve basınç farkı akışı sağlıyor.', 'The available elevation and pressure difference drive the flow.')],
+    pd: [L('Pozitif deplasmanlı pompa (dişli / eksantrik vidalı)', 'Positive-displacement pump (gear / progressive cavity)'), L(`Viskozite ${sig(R.mu, 3)} cP; santrifüj pompa verimi bu viskozitede çok düşer.`, `Viscosity is ${sig(R.mu, 3)} cP; centrifugal pumps lose efficiency badly at this viscosity.`)],
+    pdlow: [L('Çok kademeli santrifüj ya da pozitif deplasmanlı pompa', 'Multistage centrifugal or positive-displacement pump'), L(`Özgül hız ${fmt(R.NsP, 0)} < 400: tek kademeli santrifüj için debi düşük, yükseklik fazla.`, `Specific speed ${fmt(R.NsP, 0)} < 400: flow too low and head too high for a single-stage centrifugal.`)],
+    rad: [L('Tek kademeli radyal çarklı santrifüj pompa', 'Single-stage radial-impeller centrifugal pump'), L(`Özgül hız ${fmt(R.NsP, 0)}, 400–4000 aralığında.`, `Specific speed ${fmt(R.NsP, 0)} is within 400–4000.`)],
+    mix: [L('Karışık akımlı pompa', 'Mixed-flow pump'), L(`Özgül hız ${fmt(R.NsP, 0)}, 4000–9000 aralığında. Daha düşük bir devir özgül hızı radyal aralığa indirebilir.`, `Specific speed ${fmt(R.NsP, 0)} is within 4000–9000. A lower speed may bring it into the radial range.`)],
+    ax: [L('Eksenel akımlı pompa', 'Axial-flow pump'), L(`Özgül hız ${fmt(R.NsP, 0)} > 9000.`, `Specific speed ${fmt(R.NsP, 0)} > 9000.`)] }[R.pumpType];
+  rows.push([L('Pompa', 'Pump'), pt[0] + (R.pumpNeeded ? `; ${sig(R.Qh, 3)} m³/h, ${fmt(R.H, 1)} m` : ''), pt[1]]);
+  if (R.pumpNeeded) {
+    rows.push([L('Pompa malzemesi ve sızdırmazlık', 'Pump material and sealing'), `${L(R.mat.pump[0], R.mat.pump[1])}; ${sealless ? L('manyetik kaplinli (salmastrasız)', 'magnetic drive (sealless)') : L('mekanik salmastralı', 'mechanical seal')}`, sealless ? L('Aşındırıcı ya da zehirli akışkanda mil sızıntısı kabul edilemez.', 'Shaft leakage is unacceptable with corrosive or toxic fluids.') : L('Bu akışkan için yeterli ve ekonomik.', 'Adequate and economical for this fluid.')]);
+    rows.push(['Motor', `${fmt(R.motor, R.motor < 10 ? 2 : 1)} kW` + (haz.includes('f') ? L(', Ex-proof', ', explosion-proof') : ''), L(`Mil gücü ${fmt(R.PkW, 2)} kW; %25 pay ile bir üst standart motor.`, `Shaft power ${fmt(R.PkW, 2)} kW; next standard size with a 25% margin.`)]);
+  }
+  const w = R.insWhy;
+  rows.push([L('Yalıtım', 'Insulation'), R.insNeeded ? L(`${fmt(R.th.tIns * 1000, 0)} mm mineral yünü`, `${fmt(R.th.tIns * 1000, 0)} mm mineral wool`) + (w.freeze ? L(' + ısıl izleme', ' + heat tracing') : '') : L('Gerekmez', 'Not required'),
+    R.insNeeded ? [w.hot && L(`çıplak boru yüzeyi ${fmt(R.th0.Ts, 0)} °C (yanık riski)`, `bare surface is ${fmt(R.th0.Ts, 0)} °C (burn hazard)`), w.freeze && L(`akışkan ${fmt(R.Tm, 0)} °C'de donar`, `fluid freezes at ${fmt(R.Tm, 0)} °C`), w.drop && L(`yalıtımsız hat sonunda sıcaklık ${fmt(R.th0.Tout, 1)} °C olur`, `uninsulated outlet temperature would be ${fmt(R.th0.Tout, 1)} °C`), w.cold && L('soğuk hatta yoğuşma olur', 'condensation forms on a cold line')].filter(Boolean).join('; ') + L(`. Yalıtımla ısı kaybı ${sig(Math.abs(R.th.q) / 1000, 2)} kW, çıkış ${fmt(R.th.Tout, 1)} °C.`, `. With insulation: heat loss ${sig(Math.abs(R.th.q) / 1000, 2)} kW, outlet ${fmt(R.th.Tout, 1)} °C.`)
+      : L(`Yüzey ${fmt(R.th0.Ts, 0)} °C, hat sonunda sıcaklık ${fmt(R.th0.Tout, 2)} °C; ısı kaybı ${sig(Math.abs(R.th0.q) / 1000, 2)} kW.`, `Surface ${fmt(R.th0.Ts, 0)} °C, outlet temperature ${fmt(R.th0.Tout, 2)} °C; heat loss ${sig(Math.abs(R.th0.q) / 1000, 2)} kW.`)]);
+  return rows;
+}
+function compatData(R) { // [ad, not, kaynak, karar, açıklama]
+  if (!R.fl) return [];
+  const rows = MAT_ORDER.map(m => { const d = decide(R.fl, m, R.I.T); return [L(MATS[m].tr, MATS[m].en), d.r || '', MATS[m].gi != null ? 'Graco' : L('üretici', 'manufacturer'), m === R.matId ? 'sel' : d.ok ? 'ok' : 'no', d.why]; });
+  GASK.concat([['PTFE', 3]]).forEach(g => { const r = R.fl.gr[g[1]]; rows.push([L('Conta: ', 'Gasket: ') + g[0], r, 'Graco', g[0] === gasketFor(R.fl) ? 'sel' : r === 'A' ? 'ok' : 'no', r === 'A' ? L('mükemmel', 'excellent') : r === 'B' ? L('iyi; conta için A aranır', 'good; A is required for gaskets') : r === '-' ? L('kılavuzda veri yok', 'no data in guide') : r === 'C' ? L('orta–zayıf', 'fair to poor') : L('önerilmez', 'not recommended')]); });
+  return rows;
+}
+const verdict = v => v === 'sel' ? L('Seçildi', 'Selected') : v === 'ok' ? L('Uygun', 'Suitable') : L('Uygun değil', 'Not suitable');
+function renderRecs(R) {
+  $('recT').innerHTML = `<tr><th>${L('Eleman', 'Component')}</th><th>${L('Öneri', 'Recommendation')}</th><th>${L('Gerekçe', 'Why')}</th></tr>` + recData(R).map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td style="color:var(--mute)">${esc(r[2])}</td></tr>`).join('');
+  $('compCard').hidden = !R.fl;
+  if (R.fl) {
+    $('compNote').textContent = `Graco Chemical Compatibility Guide · "${R.fl.gn}"`;
+    $('compT').innerHTML = `<tr><th>${L('Malzeme', 'Material')}</th><th>${L('Not', 'Rating')}</th><th>${L('Kaynak', 'Source')}</th><th>${L('Karar', 'Verdict')}</th><th>${L('Açıklama', 'Remark')}</th></tr>` + compatData(R).map(r => `<tr><td>${r[0]}</td><td><span class="rt ${r[1] === '-' ? '' : r[1]}">${r[1] === '-' || !r[1] ? '–' : r[1]}</span></td><td style="color:var(--mute)">${r[2]}</td><td><span class="pill ${r[3]}">${verdict(r[3])}</span></td><td style="color:var(--mute)">${esc(r[4])}</td></tr>`).join('');
+  }
+}
+
+/* ====================== HESAP ADIMLARI (ekran ve PDF ortak) ====================== */
+function stepsData(R) {
+  const I = R.I, S = [], st = (t, ...items) => S.push({ t, items: items.filter(Boolean) }), p = s => ['p', s], f = s => ['f', s];
+  const reg = r => r === 'lam' ? L('laminer', 'laminar') : r === 'tra' ? L('geçiş bölgesi', 'transition') : L('türbülanslı', 'turbulent'), rg = R.rho * G;
+  st(L('Akışkan özellikleri', 'Fluid properties'),
+    p(R.custom ? L('Özellikler kullanıcı tarafından girildi.', 'Properties entered by the user.') : L(`Viskozite, Tablo D-3'teki X = ${fmt(R.fl.X, 1)}, Y = ${fmt(R.fl.Y, 1)} koordinatları ve ${fmt(I.T, 1)} °C ile Şekil D-2 nomografından okunur. Yoğunluk ve buhar basıncı literatür değerleridir.`, `Viscosity is read from the Fig. D-2 nomograph with coordinates X = ${fmt(R.fl.X, 1)}, Y = ${fmt(R.fl.Y, 1)} (Table D-3) at ${fmt(I.T, 1)} °C. Density and vapor pressure are literature values.`)),
+    f(`ρ = ${fmt(R.rho, 1)} kg/m³ &nbsp; μ = ${sig(R.mu, 3)} cP = ${sig(R.muPa, 3)} Pa·s &nbsp; P<sub>v</sub> = ${fmt(R.pv, 0)} Pa`));
+  st(L('Hacimsel debi', 'Volumetric flow rate'), f(`Q = ṁ / ρ = ${sig(R.mdot * 3600, 6)} / ${fmt(R.rho, 1)} = ${sig(R.Qh, 4)} m³/h = ${sig(R.Q, 4)} m³/s`));
+  st(L('En uygun (ekonomik) boru çapı', 'Optimum (economic) pipe diameter'),
+    p(L('Şekil 12-3 nomografının dayandığı bağıntı kullanılır; önce türbülanslı akış varsayılır, Reynolds sayısı ile denetlenir.', 'The relation behind the Fig. 12-3 nomograph is used; turbulent flow is assumed first and checked with the Reynolds number.')),
+    f(`D<sub>opt</sub> = 0,363 · Q<sup>0,45</sup> · ρ<sup>0,13</sup> = ${fmt(R.sz.DoptT, 4)} m &nbsp; → &nbsp; Re = 4ρQ / (π D μ) = ${fmt(R.sz.ReOpt, 0)} ${R.sz.visc ? '&lt; 2100' : '&gt; 2100'}`),
+    R.sz.visc && f(`${L('viskoz akış', 'viscous flow')}: D<sub>opt</sub> = 0,275 · Q<sup>0,36</sup> · μ<sup>0,18</sup> = ${fmt(R.sz.Dopt, 4)} m &nbsp; (μ: cP)`),
+    I.diaMode === 'vel' && f(`${L('istenen hız için', 'for the target velocity')}: D = √(4Q / π v) = ${fmt(R.sz.Dtarget, 4)} m`),
+    R.Dbook && p(L(`Karşılaştırma: Towler & Sinnott Denklem ${R.matId === 'cs' ? '20.30' : '20.31'} bu çelik boru için ${fmt(R.Dbook * 1000, 0)} mm verir (güncel enerji ve boru maliyetleriyle daha büyük çap).`, `Comparison: Towler & Sinnott Eq. ${R.matId === 'cs' ? '20.30' : '20.31'} gives ${fmt(R.Dbook * 1000, 0)} mm for this steel pipe (larger, reflecting current energy and pipe costs).`)));
+  st(L('Malzeme ve standart boru', 'Material and standard pipe'),
+    p(R.fl ? L(`Malzemeler maliyet sırasıyla denenir: karbon çeliği, PVC, CPVC, PP, 316 paslanmaz, PVDF, PTFE astarlı çelik. Graco kılavuzunda A notu alan (40 °C'ye kadar B de olur) ve sıcaklık ile basınç sınırını sağlayan ilk malzeme seçilir. Seçilen: ${R.dec.r ? 'Graco notu ' + R.dec.r + ', ' : ''}${R.dec.why}.`, `Materials are tried in cost order: carbon steel, PVC, CPVC, PP, 316 stainless, PVDF, PTFE-lined steel. The first one rated A in the Graco guide (B is accepted up to 40 °C) that also meets the temperature and pressure limits is chosen. Selected: ${R.dec.r ? 'Graco rating ' + R.dec.r + ', ' : ''}${R.dec.why}.`) : L('Özel akışkan: malzeme kullanıcı sorumluluğundadır.', 'Custom fluid: material is the user\'s responsibility.')),
+    f(`${L(R.mat.tr, R.mat.en)}, ${R.pipe.nps}" &nbsp; D<sub>i</sub> = ${fmt(R.pipe.id, 2)} mm &nbsp; |ΔD| = ${fmt(Math.abs(R.pipe.id - R.sz.Dtarget * 1000), 2)} mm`));
+  st(L('Akış hızı ve akış rejimi', 'Velocity and flow regime'),
+    f(`A = π D² / 4 = ${sig(R.suc.A, 4)} m² &nbsp; v = Q / A = ${fmt(R.v, 3)} m/s`),
+    f(`Re = ρ v D / μ = ${fmt(R.rho, 1)} · ${fmt(R.v, 3)} · ${fmt(R.D, 4)} / ${sig(R.muPa, 3)} = ${fmt(R.Re, 0)} &nbsp; (${reg(R.regime)})`));
+  st(L('Sürtünme çarpanı', 'Friction factor'),
+    p(R.fOv ? L('Sürtünme çarpanı kullanıcı tarafından girildi.', 'Friction factor entered by the user.') : R.regime === 'lam' ? L('Laminer akışta f = 8/Re.', 'For laminar flow f = 8/Re.') : L("Şekil 5.11 yerine aynı eğrileri veren Colebrook denklemi çözülür. f, kitaptaki tanımdır (Darcy çarpanının 1/8'i).", "Instead of reading Fig. 5.11, the Colebrook equation that generates it is solved. f follows the book's definition (1/8 of the Darcy factor).")),
+    f(`ε / D = ${R.mat.eps} / ${fmt(R.pipe.id, 2)} = ${sig(R.rel, 3)} &nbsp; → &nbsp; f = ${fmt(R.f, 5)}`));
+  st(L('Eşdeğer uzunluk ve sürtünme kaybı', 'Equivalent length and friction loss'),
+    p(L("Bağlantı elemanları, Çizelge 5.3'teki eşdeğer boru çapı sayıları (N) ile boru uzunluğuna çevrilir.", 'Fittings are converted to pipe length using the equivalent-diameter numbers (N) of Table 5.3.')),
+    ['tb', { head: [L('Eleman', 'Fitting'), 'N', L('Emme', 'Suct.'), R.branched ? L('Ana hat', 'Main') : L('Basma', 'Disch.'), L('Toplam N', 'Total N')], rows: R.fitRows.map(r => [L(r.tr, r.en), fmt(r.N, r.N % 1 ? 1 : 0), r.s, r.d, fmt((r.s + r.d) * r.N, 1)]).concat([[L('Toplam', 'Total'), '', fmt(R.Nsuc, 1), fmt(R.Ndis, 1), fmt(R.Nsuc + R.Ndis, 1)]]), w: [5, 1, 1, 1, 1.4] }],
+    f(`ΔP<sub>f</sub> = 8 f · (L + N·D) / D · (ρ v² / 2)`),
+    f(`${L('emme', 'suction')}: L = ${fmt(R.suc.L, 2)} m, N·D = ${fmt(R.Nsuc * R.D, 2)} m &nbsp; → &nbsp; ΔP = ${fmt(R.dPs, 0)} Pa`),
+    R.branched ? f(`${L('ana hat', 'main line')}: L = ${fmt(R.main.L, 2)} m, N·D = ${fmt(R.main.N * R.D, 2)} m &nbsp; → &nbsp; ΔP = ${fmt(R.dPm, 0)} Pa`)
+      : f(`${L('basma', 'discharge')}: L = ${fmt(R.br[0].seg.L, 2)} m, N·D = ${fmt(R.br[0].seg.N * R.D, 2)} m &nbsp; → &nbsp; ΔP = ${fmt(R.br[0].dP, 0)} Pa`),
+    !R.branched && f(`L<sub>t</sub> = ${fmt(R.Lpipe, 2)} + ${fmt(R.N, 1)} · ${fmt(R.D, 4)} = ${fmt(R.Lt, 2)} m &nbsp; → &nbsp; ΔP<sub>f</sub> = ${fmt(R.dP, 0)} Pa`));
+  if (R.branched) st(L('Kolların hesabı', 'Branch calculation'),
+    p(L(`Her kolun borusu kendi debisine göre boyutlandırılır. Kol kaybına T girişi (N = ${N_TEE}), ayar vanası (N = ${N_CV}), tank girişi (N = ${N_ENT}), dirsekler (N = ${N_EL}) ve şemada kola eklenen parçalar dahildir.`, `Each branch pipe is sized for its own flow. Branch loss includes a tee entry (N = ${N_TEE}), control valve (N = ${N_CV}), tank inlet (N = ${N_ENT}), elbows (N = ${N_EL}) and the fittings placed on the branch in the diagram.`)),
+    f(`H<sub>${L('kol', 'br')}</sub> = (z − z<sub>tank</sub>) + (P − P₁) / ρg + (ΔP<sub>${L('emme', 'suct')}</sub> + ΔP<sub>${L('ana', 'main')}</sub> + ΔP<sub>${L('kol', 'br')}</sub>) / ρg`),
+    ['tb', { head: branchHead(), rows: branchRows(R), w: [2.2, 1.2, 2.2, 1, 1.3, 1.4, 1.5, 1.8] }],
+    p(L(`Pompa, en yüksek yüksekliği isteyen kola (★ ${esc(R.crit.name)}) göre seçilir. Diğer kollarda aradaki fark ayar vanasında kısılır; böylece debi istenen oranda paylaşılır.`, `The pump is sized for the branch that needs the highest head (★ ${esc(R.crit.name)}). In the other branches the difference is throttled at the control valve, so the flow splits in the required ratio.`)));
+  st(L('Mekanik enerji denkliği ve basma yüksekliği', 'Mechanical energy balance and head'),
+    f(`H = Δz + ΔP / ρg + ΔP<sub>f</sub> / ρg = ${fmt(R.crit.z - I.zt, 2)} + ${fmt((R.crit.P - R.P1) / rg, 3)} + ${fmt(R.dP / rg, 3)} = ${fmt(R.H, 2)} m`),
+    f(`W = g · H = ${fmt(R.W, 2)} J/kg &nbsp; (${L('statik', 'static')} ${fmt(R.Hstat, 2)} m + ${L('sürtünme', 'friction')} ${fmt(R.dP / rg, 2)} m)`),
+    !R.pumpNeeded && p(L('H ≤ 0: akış için pompa gerekmez.', 'H ≤ 0: no pump is needed for the flow.')));
+  if (R.pumpNeeded) {
+    st(L('Pompa verimi ve gücü', 'Pump efficiency and power'),
+      p(I.eff > 0 ? L('Verim kullanıcı tarafından girildi.', 'Efficiency entered by the user.') : L("Verim, Şekil 5.13'ten kapasite ve basma yüksekliğine göre okunur.", 'Efficiency is read from Fig. 5.13 using capacity and head.')),
+      f(`η = %${fmt(R.eta * 100, 1)} &nbsp; P = W · ṁ / η = ${fmt(R.W, 2)} · ${fmt(R.mdot, 3)} / ${fmt(R.eta, 3)} = ${fmt(R.Pw, 0)} W = ${fmt(R.PkW, 2)} kW &nbsp; → &nbsp; motor ${fmt(R.motor, 2)} kW`));
+    st(L('Pompa özgül hızı ve tipi', 'Pump specific speed and type'),
+      p(L('Sürtünme ihmal edilerek statik yükseklik kullanılır. 400–4000 radyal, 4000–9000 karışık akımlı, üstü eksenel.', 'The static head is used, neglecting friction. 400–4000 radial, 4000–9000 mixed-flow, above that axial.')),
+      f(`N<sub>s</sub> = N · Q<sup>1/2</sup> / H<sup>3/4</sup> = ${I.rpm} · ${fmt(R.Qgpm, 1)}<sup>1/2</sup> / ${fmt(R.Hft, 2)}<sup>3/4</sup> = ${fmt(R.NsP, 0)} &nbsp; (Q: US gal/${L('dk', 'min')}, H: ft)`));
+  }
+  st(L('Net pozitif emme yüksekliği (NPEY)', 'Net positive suction head (NPSH)'),
+    f(`NPEY = P₁ / ρg + h<sub>s</sub> − ΔP<sub>${L('emme', 'suct')}</sub> / ρg − P<sub>v</sub> / ρg = ${fmt(R.P1 / rg, 2)} + ${fmt(R.zt, 2)} − ${fmt(R.dPs / rg, 3)} − ${fmt(R.pv / rg, 3)} = ${fmt(R.npsha, 2)} m ${R.npsha >= R.npshr ? '≥' : '&lt;'} ${fmt(R.npshr, 1)} m`));
+  st(L('Güvenli çalışma basıncı', 'Safe working pressure'),
+    p(R.rate.cT != null ? L(`Üretici verisi: 23 °C'de ${R.rate.psi} psi; ${R.rate.Tt} °C için sıcaklık düzeltme katsayısı ${fmt(R.rate.cT, 2)}.`, `Manufacturer data: ${R.rate.psi} psi at 23 °C; temperature derating factor ${fmt(R.rate.cT, 2)} for ${R.rate.Tt} °C.`) : L(`Yaklaşık hesap: P = 2 · S · 0,875 · t / D_dış, S = ${R.mat.S} MPa${R.mat.cap ? '; astarlı boruda flanş sınıfı nedeniyle en çok ' + R.mat.cap + ' bar' : ''}.`, `Approximate: P = 2 · S · 0.875 · t / OD, S = ${R.mat.S} MPa${R.mat.cap ? '; limited to ' + R.mat.cap + ' bar by the flange class for lined pipe' : ''}.`)),
+    f(`P<sub>${L('izin', 'allow')}</sub> = ${fmt(R.rate.bar, 2)} bar &nbsp; ${L('pompa çıkışı', 'pump discharge')} = ${fmt(R.Pdis / 1e5, 2)} bar` + (R.branched ? ` &nbsp; ${L('T ayrımı', 'tee')} = ${fmt(R.Pj / 1e5, 2)} bar` : ` &nbsp; ${L('hedef', 'destination')} = ${fmt(R.br[0].P / 1e5, 3)} bar`)));
+  st(L('Isı kaybı ve yalıtım', 'Heat loss and insulation'),
+    p(L(`Ortam ${fmt(I.Ta, 0)} °C, durgun hava (dış yüzey katsayısı 10 W/m²·K). İç katsayı ${R.Re > 4000 ? 'Dittus–Boelter bağıntısıyla' : 'laminer akış için Nu = 3,66 ile'} hesaplanır. Yüzey 60 °C'yi aşarsa, sıcaklık 2 °C'den fazla değişirse ya da donma riski varsa yalıtım önerilir.`, `Ambient ${fmt(I.Ta, 0)} °C, still air (outside coefficient 10 W/m²·K). Inside coefficient from ${R.Re > 4000 ? 'the Dittus–Boelter relation' : 'Nu = 3.66 for laminar flow'}. Insulation is recommended if the surface exceeds 60 °C, the temperature changes by more than 2 °C, or there is a freezing risk.`)),
+    f(`${L('yalıtımsız', 'bare')}: U = ${fmt(R.th0.U, 2)} W/m²·K &nbsp; q = ${sig(Math.abs(R.th0.q) / 1000, 3)} kW &nbsp; T<sub>${L('çıkış', 'out')}</sub> = ${fmt(R.th0.Tout, 2)} °C &nbsp; T<sub>${L('yüzey', 'surf')}</sub> = ${fmt(R.th0.Ts, 1)} °C`),
+    R.insNeeded && f(`${fmt(R.th.tIns * 1000, 0)} mm ${L('yalıtımla', 'insulation')}: q = ${sig(Math.abs(R.th.q) / 1000, 3)} kW &nbsp; T<sub>${L('çıkış', 'out')}</sub> = ${fmt(R.th.Tout, 2)} °C &nbsp; T<sub>${L('yüzey', 'surf')}</sub> = ${fmt(R.th.Ts, 1)} °C`));
+  if (R.pumpNeeded) st(L('Yıllık enerji tüketimi', 'Annual energy use'),
+    f(`E = P · t = ${fmt(R.PkW, 2)} kW · ${fmt(I.hours, 0)} h = ${fmt(R.kWh, 0)} kWh/${L('yıl', 'yr')} &nbsp; → &nbsp; ${fmt(R.cost, 0)} ${esc(I.cur)}/${L('yıl', 'yr')}`));
+  return S;
+}
+const sources = () => [
+  L('Towler, G. & Sinnott, R. Chemical Engineering Design (Kimya Mühendisliği Tasarımı): Çizelge 5.2 (boru pürüzlülüğü), Çizelge 5.3 (eşdeğer boru çapları), Şekil 5.11 (sürtünme çarpanı), Şekil 5.13 (pompa verimi), Denklem 20.30–20.31 (ekonomik çap).', 'Towler, G. & Sinnott, R. Chemical Engineering Design: Table 5.2 (pipe roughness), Table 5.3 (equivalent pipe diameters), Fig. 5.11 (friction factor), Fig. 5.13 (pump efficiency), Eqs. 20.30–20.31 (economic diameter).'),
+  L('Peters, Timmerhaus & West, Plant Design and Economics for Chemical Engineers: Şekil 12-3 (en uygun boru çapı nomografı), Tablo D-3 ve Şekil D-2 (sıvı viskoziteleri).', 'Peters, Timmerhaus & West, Plant Design and Economics for Chemical Engineers: Fig. 12-3 (optimum pipe diameter nomograph), Table D-3 and Fig. D-2 (liquid viscosities).'),
+  L('Graco Chemical Compatibility Guide (güncelleme 29.10.2024): malzeme ve conta uyum notları, 21 °C.', 'Graco Chemical Compatibility Guide (updated 29 Oct 2024): material and gasket compatibility ratings, 21 °C.'),
+  L("PVC/CPVC/PP/PVDF Sch 80 boru boyutları, basınç sınıfları ve sıcaklık düzeltme katsayıları: üretici teknik verileri (yaklaşık). Yoğunluk, buhar basıncı, özgül ısı: Perry's Chemical Engineers' Handbook ve genel literatür.", "PVC/CPVC/PP/PVDF Sch 80 pipe dimensions, pressure ratings and temperature derating factors: manufacturer technical data (approximate). Density, vapor pressure, specific heat: Perry's Chemical Engineers' Handbook and general literature.")
+];
+function renderSteps(R) {
+  $('steps').innerHTML = stepsData(R).map(s => `<div class="step"><div><h3>${s.t}</h3>${s.items.map(([k, v]) => k === 'p' ? `<p>${v}</p>` : k === 'f' ? `<div class="f">${v}</div>` : `<table><tr>${v.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${h}</th>`).join('')}</tr>${v.rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</table>`).join('')}</div></div>`).join('');
+  $('foot').textContent = L('Kaynaklar: Towler & Sinnott; Peters & Timmerhaus; Graco Chemical Compatibility Guide. Ayrıntılı kaynak listesi PDF raporunda.', 'Sources: Towler & Sinnott; Peters & Timmerhaus; Graco Chemical Compatibility Guide. Full list in the PDF report.');
+}
+
+/* ====================== ŞEMA ====================== */
+function mkPath(pts, n, key) { const seg = []; let len = 0; for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); seg.push(l); len += l; } return { pts, seg, len, n, key, off: 0, v: 0 }; }
+function ptAt(p, s) { for (let i = 0; i < p.seg.length; i++) { if (s <= p.seg[i] || i === p.seg.length - 1) { const t = p.seg[i] ? Math.min(1, s / p.seg[i]) : 0; return [p.pts[i][0] + (p.pts[i + 1][0] - p.pts[i][0]) * t, p.pts[i][1] + (p.pts[i + 1][1] - p.pts[i][1]) * t]; } s -= p.seg[i]; } }
+// ---- Şema düzenleyici ----
+// Şema ölçeklidir: yatay eksen mesafe (m), düşey eksen kot (m), pompa kotu 0. Boru hatları dik açılı kırık çizgilerdir;
+// her köşe 90° dirsek sayılır. Uzunluklar, kotlar, dirsekler ve parçalar hesaba buradan girer.
+const FN = Object.fromEntries(FITS.map(x => [x[0], x[3]]));
+const GRID = 0.5, snap = v => Math.round(v / GRID) * GRID;
+const PAL = ['gate', 'chk', 'globe', 'plug', 'union', 'el45'];
+const palName = t => ({ gate: L('Sürgülü', 'Gate'), chk: L('Çekvalf', 'Check'), globe: L('Glob', 'Globe'), plug: L('Tapalı', 'Plug'), union: L('Rakor', 'Union'), el45: '45°' }[t]);
+let fid = 1, drag = null, VIEW = { s: 20, ox: 130, oy: 370 };
+const mkF = (run, type, f) => ({ id: fid++, type, run, f });
+const spread = (run, type, k, a, b) => Array.from({ length: k }, (_, i) => mkF(run, type, a + (b - a) * (i + 0.5) / k));
+function cleanRun(r) { // üst üste binen noktaları ve aynı doğrultudaki ara noktaları atar
+  const p = r.pts; let ch = true;
+  while (ch) { ch = false;
+    for (let i = 0; i < p.length - 1 && p.length > 2; i++) if (p[i].x === p[i + 1].x && p[i].y === p[i + 1].y) { p.splice(i > 0 ? i : 1, 1); ch = true; break; }
+    if (ch) continue;
+    for (let i = 1; i < p.length - 1; i++) if ((p[i - 1].x === p[i].x && p[i].x === p[i + 1].x) || (p[i - 1].y === p[i].y && p[i].y === p[i + 1].y)) { p.splice(i, 1); ch = true; break; }
+  }
+  if (p[0].x !== p[1].x || p[0].y !== p[1].y) r.o = p[0].y === p[1].y ? 'H' : 'V'; else if (!r.o) r.o = r.pref;
+}
+function fixRun(r) { // uçlar taşındığında hattı dik açılı tutar
+  const p = r.pts, k = p.length - 1;
+  if (k === 1) {
+    if (p[0].x !== p[1].x && p[0].y !== p[1].y) { p.splice(1, 0, r.pref === 'H' ? { x: p[1].x, y: p[0].y } : { x: p[0].x, y: p[1].y }); r.o = r.pref; }
+    else if (p[0].x !== p[1].x || p[0].y !== p[1].y) r.o = p[0].y === p[1].y ? 'H' : 'V';
+    return;
+  }
+  if (r.o === 'H') p[1].y = p[0].y; else p[1].x = p[0].x;
+  const lo = (k - 1) % 2 === 0 ? r.o : (r.o === 'H' ? 'V' : 'H');
+  if (lo === 'H') p[k - 1].y = p[k].y; else p[k - 1].x = p[k].x;
+}
+function defLayout(m) {
+  const suc = () => ({ pref: 'V', pts: [{ x: 0, y: 5 }, { x: 0, y: 0 }, { x: 2, y: 0 }] }), sf = () => [mkF('suc', 'gate', 0.86), ...spread('suc', 'union', 6, 0.04, 0.7)];
+  const l = m === 'single'
+    ? { tank: { x: 0, y: 5 }, pump: { x: 2, y: 0 }, tee: null, dests: [{ x: 18, y: 15, name: L('Hedef', 'Destination'), pct: 100, P: 1.3 }],
+        runs: { suc: suc(), dis: { pref: 'H', pts: [{ x: 2, y: 0 }, { x: 15, y: 0 }, { x: 15, y: 15 }, { x: 18, y: 15 }] } },
+        fits: [...sf(), mkF('dis', 'chk', 0.06), ...spread('dis', 'union', 8, 0.14, 0.97)] }
+    : { tank: { x: 0, y: 5 }, pump: { x: 2, y: 0 }, tee: { x: 14, y: 0 }, dests: [{ x: 24, y: 15, name: 'Reaktör 1', pct: 60, P: 1.3 }, { x: 34, y: 8, name: 'Reaktör 2', pct: 40, P: 1 }],
+        runs: { suc: suc(), main: { pref: 'H', pts: [{ x: 2, y: 0 }, { x: 14, y: 0 }] }, b0: { pref: 'V', pts: [{ x: 14, y: 0 }, { x: 14, y: 15 }, { x: 24, y: 15 }] }, b1: { pref: 'H', pts: [{ x: 14, y: 0 }, { x: 34, y: 0 }, { x: 34, y: 8 }] } },
+        fits: [...sf(), mkF('main', 'chk', 0.14), ...spread('main', 'union', 4, 0.3, 0.95), ...spread('b0', 'union', 2, 0.1, 0.5), ...spread('b1', 'union', 2, 0.1, 0.5)] };
+  Object.values(l.runs).forEach(cleanRun); return l;
+}
+const blankLayout = () => ({ tank: null, pump: null, tee: null, dests: [], runs: {}, fits: [] });
+let LY1 = defLayout('single');
+const lay = () => LY1;
+function runEnds(k) { const l = lay(); return k === 'suc' ? [l.tank, l.pump] : k === 'dis' ? [l.pump, l.dests[0]] : k === 'main' ? [l.pump, l.tee] : [l.tee, l.dests[+k.slice(1)]]; }
+function syncRun(k) { const r = lay().runs[k], [a, b] = runEnds(k), p = r.pts; p[0] = { x: a.x, y: a.y }; p[p.length - 1] = { x: b.x, y: b.y }; fixRun(r); }
+const syncAll = () => Object.keys(lay().runs).forEach(syncRun), cleanAll = () => Object.values(lay().runs).forEach(cleanRun);
+function anchorOf(k) { const l = lay(); return k === 'tank' ? l.tank : k === 'pump' ? l.pump : k === 'tee' ? l.tee : l.dests[+k.slice(1)]; }
+function restructure() { // boru hatlarını şemadaki ekipmana uydurur: tank→pompa, pompa→hedef ya da pompa→T→hedefler
+  const l = lay(), k = l.dests.length, has = r => !!l.runs[r];
+  const mk = (r, pref) => { const [a, b] = runEnds(r); l.runs[r] = { pref, pts: [{ x: a.x, y: a.y }, { x: b.x, y: b.y }] }; fixRun(l.runs[r]); cleanRun(l.runs[r]); };
+  const rm = r => { delete l.runs[r]; l.fits = l.fits.filter(x => x.run !== r); };
+  if (l.tank && l.pump) { if (!has('suc')) mk('suc', 'V'); } else if (has('suc')) rm('suc');
+  if (k >= 2 && l.pump) {
+    if (!l.tee) { const q = has('dis') ? fitPos({ run: 'dis', f: 0.4 }) : { x: l.pump.x + 6, y: l.pump.y }; l.tee = { x: snap(q.x), y: snap(q.y) }; }
+    if (has('dis')) { l.fits.forEach(x => { if (x.run === 'dis') x.run = 'main'; }); delete l.runs.dis; }
+    if (!has('main')) mk('main', 'H');
+    l.dests.forEach((d, i) => { if (!has('b' + i)) mk('b' + i, 'H'); });
+    Object.keys(l.runs).filter(r => r[0] === 'b' && +r.slice(1) >= k).forEach(rm);
+  } else {
+    if (has('main')) { l.fits.forEach(x => { if (x.run === 'main') x.run = 'dis'; }); delete l.runs.main; }
+    Object.keys(l.runs).filter(r => r[0] === 'b').forEach(rm); l.tee = null;
+    if (k === 1 && l.pump) { if (!has('dis')) mk('dis', 'H'); } else if (has('dis')) rm('dis');
+  }
+  mode = k >= 2 ? 'branch' : 'single'; setModeUI();
+}
+function afterStruct() { restructure(); sim.open = lay().dests.length ? lay().dests.map(() => 1) : [1]; inputsFromLayout(); }
+function layoutFromInputs() { // menüye yazılan sayılar şemadaki elemanları taşır
+  const l = lay(), v = id => parseFloat($(id).value), ok = isFinite; if (!l.pump) return; const py = l.pump.y;
+  if (l.tank) { if (ok(v('zt'))) l.tank.y = py + v('zt'); if (ok(v('Lsh'))) l.pump.x = l.tank.x + v('Lsh'); }
+  if (l.tee) { const ox = l.tee.x; if (ok(v('zj'))) l.tee.y = py + v('zj'); if (ok(v('Lm'))) l.tee.x = l.pump.x + v('Lm'); l.dests.forEach(d => { d.x += l.tee.x - ox; }); }
+  else if (l.dests[0]) { if (ok(v('zr'))) l.dests[0].y = py + v('zr'); if (ok(v('Ldh'))) l.dests[0].x = l.pump.x + v('Ldh'); }
+  syncAll(); cleanAll();
+}
+function inputsFromLayout() { // şemada sürüklenen elemanlar menüdeki sayıları günceller
+  const l = lay(), r = v => +v.toFixed(3);
+  if (l.pump) { const py = l.pump.y;
+    if (l.tank) { $('zt').value = r(l.tank.y - py); $('Lsh').value = r(l.pump.x - l.tank.x); }
+    if (l.tee) { $('zj').value = r(l.tee.y - py); $('Lm').value = r(l.tee.x - l.pump.x); }
+    else if (l.dests[0]) { $('zr').value = r(l.dests[0].y - py); $('Ldh').value = r(l.dests[0].x - l.pump.x); $('P2').value = l.dests[0].P; } }
+  buildBranches();
+}
+function addDest(pos) {
+  const l = lay(); if (l.dests.length >= 4) return;
+  let k = l.dests.length + 1; const nm = () => L('Hedef ', 'Target ') + k; while (l.dests.some(d => d.name === nm())) k++;
+  let p = pos; if (!p) { const b = l.tee || l.pump || { x: 0, y: 0 }; p = { x: b.x + 15, y: b.y + 5 }; while (l.dests.some(d => d.x === p.x && d.y === p.y)) p.y -= 5; }
+  l.dests.push({ x: p.x, y: p.y, name: nm(), pct: l.dests.length ? 50 : 100, P: 1 }); restructure();
+}
+function delDest(i) {
+  const l = lay(); if (l.tee) { l.fits = l.fits.filter(x => x.run !== 'b' + i); const k = l.dests.length - 1;
+    for (let j = i; j < k; j++) { l.runs['b' + j] = l.runs['b' + (j + 1)]; l.fits.forEach(x => { if (x.run === 'b' + (j + 1)) x.run = 'b' + j; }); }
+    delete l.runs['b' + k]; }
+  l.dests.splice(i, 1); restructure();
+}
+function fitView() { // şemayı çizim alanına sığdırır
+  const l = lay(), xs = [], ys = [], add = q => { if (q) { xs.push(q.x); ys.push(q.y); } };
+  [l.tank, l.pump, l.tee, ...l.dests].forEach(add); Object.values(l.runs).forEach(r => r.pts.forEach(add));
+  if (!xs.length) { VIEW = { s: 20, ox: 330, oy: 300 }; return; }
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), AW = 600, AH = 245;
+  const s = Math.min(AW / Math.max(x1 - x0, 6), AH / Math.max(y1 - y0, 6), 42);
+  VIEW = { s, ox: 195 + (AW - (x1 - x0) * s) / 2 - x0 * s, oy: 124 + (AH - (y1 - y0) * s) / 2 + y1 * s };
+}
+const wx = x => VIEW.ox + x * VIEW.s, wy = y => VIEW.oy - y * VIEW.s;
+function fitPos(x) { // parçanın hat üzerindeki yeri (dünya koordinatı) ve yönü
+  const p = lay().runs[x.run].pts, ls = []; let tot = 0;
+  for (let i = 0; i < p.length - 1; i++) { const l = Math.abs(p[i + 1].x - p[i].x) + Math.abs(p[i + 1].y - p[i].y); ls.push(l); tot += l; }
+  let d = x.f * tot;
+  for (let i = 0; i < ls.length; i++) { if (d <= ls[i] || i === ls.length - 1) { const t = ls[i] ? Math.min(1, d / ls[i]) : 0; return { x: p[i].x + (p[i + 1].x - p[i].x) * t, y: p[i].y + (p[i + 1].y - p[i].y) * t, ang: p[i].y === p[i + 1].y ? 0 : 90 }; } d -= ls[i]; }
+  return { x: p[0].x, y: p[0].y, ang: 0 };
+}
+function nearestOnRuns(pt) { // ekran noktasına en yakın hat konumu
+  let best = null; const runs = lay().runs;
+  for (const k in runs) { const p = runs[k].pts; let acc = 0, tot = 0; for (let i = 0; i < p.length - 1; i++) tot += Math.abs(p[i + 1].x - p[i].x) + Math.abs(p[i + 1].y - p[i].y);
+    for (let i = 0; i < p.length - 1; i++) { const ax = wx(p[i].x), ay = wy(p[i].y), bx = wx(p[i + 1].x), by = wy(p[i + 1].y), l2 = (bx - ax) ** 2 + (by - ay) ** 2, len = Math.abs(p[i + 1].x - p[i].x) + Math.abs(p[i + 1].y - p[i].y);
+      const t = l2 ? Math.max(0, Math.min(1, ((pt.x - ax) * (bx - ax) + (pt.y - ay) * (by - ay)) / l2)) : 0, qx = ax + (bx - ax) * t, qy = ay + (by - ay) * t, d = Math.hypot(pt.x - qx, pt.y - qy);
+      if (!best || d < best.d) best = { d, run: k, f: tot ? (acc + t * len) / tot : 0, x: qx, y: qy, ang: p[i].y === p[i + 1].y ? 0 : 90 }; acc += len; } }
+  return best;
+}
+const BOW = '<path d="M-10 -7L10 7L10 -7L-10 7Z" fill="var(--mon)" stroke="var(--mon-ink)" stroke-width="1.7" stroke-linejoin="round"/>';
+const SYM = {
+  gate: BOW + '<path d="M0 0V-14M-7 -14H7" fill="none" stroke="var(--mon-ink)" stroke-width="1.7"/>',
+  chk: BOW + '<path d="M-5 -13h10m-4 -4l4 4l-4 4" fill="none" stroke="var(--mon-ink)" stroke-width="1.5"/>',
+  globe: BOW + '<circle r="3.4" fill="var(--mon-ink)"/><path d="M0 -3V-13M-6 -13H6" fill="none" stroke="var(--mon-ink)" stroke-width="1.7"/>',
+  plug: BOW + '<rect x="-3.2" y="-3.2" width="6.4" height="6.4" fill="var(--mon-ink)"/>',
+  union: '<path d="M-3 -8V8M3 -8V8" fill="none" stroke="var(--mon-ink)" stroke-width="2.4" stroke-linecap="round"/>',
+  el45: '<path d="M-9 5H-1L7 -5" fill="none" stroke="var(--mon-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>',
+  cv: BOW + '<path d="M0 0V-10" stroke="var(--mon-ink)" stroke-width="1.7"/><path d="M-7 -10a7 6 0 0 1 14 0z" fill="var(--mon)" stroke="var(--mon-ink)" stroke-width="1.5"/>'
+};
+const EQ = ['tank', 'pump', 'dest'], TRASH_Y = 326;
+const inTrash = p => p.x < 66 && p.y > TRASH_Y - 8;
+const EQSYM = {
+  tank: '<rect x="-13" y="-11" width="26" height="20" rx="4" fill="var(--mon)" stroke="var(--mon-ink)" stroke-width="1.6"/><rect x="-11" y="-3" width="22" height="10" rx="3" fill="var(--mon-water)" opacity=".55"/>',
+  pump: '<circle r="11" fill="var(--mon)" stroke="var(--mon-ink)" stroke-width="1.6"/><path d="M-4 -6L7 0L-4 6Z" fill="var(--acc)"/>',
+  dest: '<rect x="-9" y="-11" width="24" height="20" rx="4" fill="var(--mon)" stroke="var(--mon-ink)" stroke-width="1.6"/><rect x="-7" y="-1" width="20" height="8" rx="3" fill="var(--mon-water)" opacity=".55"/><path d="M-20 -1h8m-3 -3l3 3l-3 3" fill="none" stroke="var(--mon-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+};
+function drawPfd(R) {
+  const l = lay(), X = q => [wx(q.x), wy(q.y)], keys = Object.keys(l.runs), py = l.pump ? l.pump.y : 0, num = id => parseFloat($(id).value);
+  const txt = (x, y, t, o = {}) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${o.a || 'middle'}" font-size="${o.s || 12}" fill="${o.c || 'var(--mon-mute)'}" font-family="${o.m ? 'Consolas,monospace' : 'Segoe UI,sans-serif'}" ${o.w ? 'font-weight="600"' : ''}>${t}</text>`;
+  const ves = (x, y, w, h, lev, lab) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="var(--mon)" stroke="var(--mon-ink)" stroke-width="1.8"/><rect x="${x + 2}" y="${y + h * (1 - lev)}" width="${w - 4}" height="${h * lev - 2}" rx="8" fill="var(--mon-water)" opacity=".45" class="liq"/>` + txt(x + w / 2, y - 7, lab, { c: 'var(--mon-ink)', w: 1 });
+  const col = k => k[0] === 'b' ? BCOL[+k.slice(1)] : 'var(--mon-pipe)';
+  const sym = (type, x, y, ang, attr, op) => `<g ${attr || ''} transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${ang})" ${op ? `opacity="${op}"` : ''}><circle r="13" fill="transparent"/>${SYM[type]}</g>`;
+  let pipes = '', hits = '', labs = '', dots = '', corners = 0;
+  keys.forEach(k => {
+    const wp = l.runs[k].pts, pp = wp.map(X), c = col(k), d = pp.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
+    pipes += `<path d="${d}" fill="none" stroke="${c}" stroke-width="9" stroke-linejoin="round" stroke-linecap="round" opacity=".26"/><path d="${d}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"/>`;
+    for (let i = 0; i < pp.length - 1; i++) {
+      const a = pp[i], b = pp[i + 1], hor = wp[i].y === wp[i + 1].y, len = Math.abs(wp[i + 1].x - wp[i].x) + Math.abs(wp[i + 1].y - wp[i].y), pl = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      hits += `<line class="noexp" data-run="${k}" data-seg="${i}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="transparent" stroke-width="18" style="cursor:${hor ? 'ns-resize' : 'ew-resize'}"/>`;
+      if (pl >= 44) labs += hor ? txt((a[0] + b[0]) / 2, a[1] - 11, `${fmt(len, 1)} m`, { m: 1, s: 11 }) : txt(a[0] + 9, (a[1] + b[1]) / 2 + 4, `${fmt(len, 1)} m`, { a: 'start', m: 1, s: 11 });
+      if (i > 0) { dots += `<circle cx="${a[0]}" cy="${a[1]}" r="4.6" fill="${c}"/>`; corners++; }
+    }
+  });
+  let s = pipes + hits + labs + dots;
+  // tank, hedefler, T ayrımı, pompa (sürüklenebilir)
+  if (l.tank) { const T = X(l.tank); s += `<g data-a="tank" style="cursor:move">${ves(T[0] - 45, T[1] - 60, 90, 60, 0.7, L('Besleme tankı', 'Feed tank'))}</g>` + txt(T[0] + 52, T[1] - 40, `P₁ ${fmt(num('P1'), 2)} atm`, { a: 'start', m: 1, s: 11, c: 'var(--mon-ink)' }) + txt(T[0] + 52, T[1] - 25, `${fmt(num('T'), 1)} °C · z ${fmt(l.tank.y - py, 1)} m`, { a: 'start', m: 1, s: 11 }); }
+  l.dests.forEach((dq, i) => { const D = X(dq), b = R && R.br[i];
+    s += `<g data-a="d${i}" style="cursor:move">${ves(D[0], D[1] - 30, 84, 60, 0.5, esc(dq.name))}</g>` + txt(D[0] + 42, D[1] + 44, `${fmt(dq.P, 2)} atm · z ${fmt(dq.y - py, 1)} m`, { m: 1, s: 11, c: 'var(--mon-ink)' }) + (b && l.tee ? txt(D[0] + 42, D[1] + 58, `${b.seg.pipe.nps}" · ${sig(b.Q * 3600, 3)} m³/h`, { m: 1, s: 11 }) : '');
+  });
+  if (l.tee) { const J = X(l.tee); s += `<g data-a="tee" style="cursor:move"><circle cx="${J[0]}" cy="${J[1]}" r="12" fill="transparent"/><circle cx="${J[0]}" cy="${J[1]}" r="6.5" fill="var(--mon-ink)"/></g>` + txt(J[0] - 10, J[1] + 22, `T · z ${fmt(l.tee.y - py, 1)} m`, { a: 'end', m: 1, s: 11 });
+    keys.filter(k => k[0] === 'b').forEach(k => { const q = fitPos({ run: k, f: 0.62 }); s += sym('cv', wx(q.x), wy(q.y), q.ang); }); }
+  l.fits.forEach(x => { if (drag && drag.kind === 'fit' && drag.fit === x) return; const q = fitPos(x); s += sym(x.type, wx(q.x), wy(q.y), q.ang, `data-fit="${x.id}" style="cursor:grab"`); });
+  let Pm = [0, 0];
+  if (l.pump) { Pm = X(l.pump); s += `<g id="pumpG" data-a="pump" style="cursor:move"><circle cx="${Pm[0]}" cy="${Pm[1]}" r="20" fill="var(--mon)" stroke="var(--mon-ink)" stroke-width="2"/><circle id="imp" cx="${Pm[0]}" cy="${Pm[1]}" r="15.5" fill="none" stroke="var(--acc)" stroke-width="2.6" stroke-dasharray="6.2 7.7" opacity=".8"/><path id="pumpTri" d="M${Pm[0] - 6} ${Pm[1] - 9}L${Pm[0] + 10} ${Pm[1]}L${Pm[0] - 6} ${Pm[1] + 9}Z" fill="var(--acc)"/></g>` + txt(Pm[0], Pm[1] + 38, !R ? L('Pompa', 'Pump') : R.pumpNeeded ? L('Pompa', 'Pump') + ` · ${fmt(R.PkW, 2)} kW` : L('Pompa gerekmez', 'No pump needed'), { c: 'var(--mon-ink)', w: 1 }); }
+  if (R) s += txt(480, 24, `${L(R.mat.tr, R.mat.en)} · ${R.pipe.nps}" · Di ${fmt(R.pipe.id, 1)} mm`, { c: 'var(--mon-ink)', s: 13, w: 1 });
+  else s += txt(500, 205, L('Şemayı kurmak için soldaki kutudan sürükleyin', 'Drag from the box on the left to build the diagram'), { c: 'var(--mon-ink)', s: 15, w: 1 }) + txt(500, 228, L('Gerekli: besleme tankı, pompa ve en az bir hedef', 'Needed: a feed tank, a pump and at least one destination'), { s: 12.5 });
+  // parça kutusu: solda ekipman ve silme alanı, sağında boru parçaları
+  const box = (x, y, on) => `<rect x="${x}" y="${y}" width="52" height="46" rx="9" fill="rgba(140,170,190,${on ? '.22' : '.10'})" stroke="rgba(140,170,190,.38)"/>`;
+  const can = { tank: !l.tank, pump: !l.pump, dest: l.dests.length < 4 }, eqName = { tank: L('Tank', 'Tank'), pump: L('Pompa', 'Pump'), dest: L('Hedef', 'Target') };
+  const hot = drag && drag.p && (drag.kind === 'anchor' || drag.kind === 'fit') && inTrash(drag.p);
+  s += `<g id="pal" class="noexp">` + EQ.map((t, i) => { const y = 40 + i * 50; return `<g data-eq="${t}" style="cursor:${can[t] ? 'grab' : 'not-allowed'}" opacity="${can[t] ? 1 : 0.35}">${box(8, y)}<g transform="translate(34 ${y + 19})">${EQSYM[t]}</g>${txt(34, y + 41, eqName[t], { s: 9.5 })}</g>`; }).join('')
+    + `<g><rect x="8" y="${TRASH_Y}" width="52" height="50" rx="9" fill="${hot ? 'rgba(255,113,99,.35)' : 'rgba(255,113,99,.08)'}" stroke="var(--bad)" stroke-dasharray="4 3"/><path d="M26 ${TRASH_Y + 14}h16M29 ${TRASH_Y + 14}v-3h10v3M28 ${TRASH_Y + 14}l1 15h10l1 -15" fill="none" stroke="var(--bad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>${txt(34, TRASH_Y + 44, L('Sil', 'Delete'), { s: 9.5, c: 'var(--bad)' })}</g>`
+    + PAL.map((t, i) => { const y = 40 + i * 50; return `<g data-pal="${t}" style="cursor:grab">${box(66, y)}<g transform="translate(92 ${y + 19})">${SYM[t]}</g>${txt(92, y + 41, palName(t), { s: 9.5 })}</g>`; }).join('') + `</g>`;
+  if (drag && drag.kind === 'fit') { const g = drag.near; s += `<g class="noexp" style="pointer-events:none">${g ? sym(drag.fit.type, g.x, g.y, g.ang, '', 0.95) + `<circle cx="${g.x}" cy="${g.y}" r="17" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-dasharray="4 3"/>` : sym(drag.fit.type, drag.p.x, drag.p.y, 0, '', 0.55) + (drag.isNew ? '' : `<path d="M${drag.p.x + 12} ${drag.p.y - 20}l10 10m0 -10l-10 10" stroke="var(--bad)" stroke-width="2.4" stroke-linecap="round"/>`)}</g>`; }
+  if (drag && drag.kind === 'eq') s += `<g class="noexp" style="pointer-events:none" opacity="${drag.p.x > 125 ? 0.9 : 0.4}" transform="translate(${drag.p.x} ${drag.p.y}) scale(2.4)">${EQSYM[drag.type]}</g>`;
+  // akış tanecikleri
+  const px = k => l.runs[k].pts.map(X), ps = [];
+  if (R) { ps.push(mkPath(px('suc').concat(px(l.tee ? 'main' : 'dis').slice(1)), l.tee ? 30 : 46, 'main'));
+    if (l.tee) R.br.forEach((b, i) => { if (l.runs['b' + i]) ps.push(mkPath(px('b' + i), 14, i)); }); }
+  s += `<g id="bub"></g>` + ps.map((p, k) => `<g id="pp${k}" class="pp">${Array.from({ length: p.n }, () => `<circle r="2.6" fill="${p.key === 'main' ? 'var(--mon-water)' : BCOL[p.key]}"/>`).join('')}</g>`).join('');
+  $('pfd').innerHTML = s;
+  $('pfd').setAttribute('aria-label', L('Düzenlenebilir akış şeması: tank, pompa, boru hatları, vanalar ve hedefler', 'Editable flow diagram: tank, pump, pipe runs, valves and destinations'));
+  ps.forEach((p, k) => p.cs = $('pp' + k).children); paths = ps; paths.px = Pm[0]; paths.PY = Pm[1];
+  $('mfoot').innerHTML = R ? `<span>${L('boru', 'pipe')} <b>${fmt(R.Lpipe, 1)} m</b></span><span>${L('dirsek', 'elbows')} <b>${corners}</b></span><span>${L('parça', 'fittings')} <b>${l.fits.length}</b></span><span>${L('basma yüksekliği', 'head')} <b>${R.pumpNeeded ? fmt(R.H, 1) + ' m' : '–'}</b></span><span id="mfSim"></span>`
+    : `<span>${L('şema eksik: hesap için tank, pompa ve hedef gerekli', 'diagram incomplete: a tank, a pump and a destination are needed')}</span>`;
+  placeParts();
+}
+function exportPfd() { const c = $('pfd').cloneNode(true); c.querySelectorAll('.noexp').forEach(e => e.remove()); return c; }
+// ---- sürükleme ----
+function svgPt(e) { const m = $('pfd').getScreenCTM().inverse(), p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m); return { x: p.x, y: p.y }; }
+const toW = p => ({ x: (p.x - VIEW.ox) / VIEW.s, y: (VIEW.oy - p.y) / VIEW.s });
+function dragStart(e) {
+  const t = e.target.closest('[data-eq],[data-pal],[data-fit],[data-a],[data-seg]'); if (!t) return; e.preventDefault();
+  const p0 = svgPt(e), w0 = toW(p0), l = lay();
+  if (t.dataset.eq) { const ty = t.dataset.eq; if ((ty === 'tank' && l.tank) || (ty === 'pump' && l.pump) || (ty === 'dest' && l.dests.length >= 4)) return; drag = { kind: 'eq', type: ty, p: p0 }; }
+  else if (t.dataset.pal) drag = { kind: 'fit', fit: { id: 0, type: t.dataset.pal }, isNew: true, p: p0, near: null };
+  else if (t.dataset.fit) drag = { kind: 'fit', fit: l.fits.find(x => x.id === +t.dataset.fit), p: p0, near: null };
+  else if (t.dataset.a) { const a = anchorOf(t.dataset.a); drag = { kind: 'anchor', key: t.dataset.a, a, ox: a.x - w0.x, oy: a.y - w0.y, p: p0 }; }
+  else { // boru parçasını yana sürükle: uçlarda iki yeni köşe (dirsek) oluşur
+    const r = l.runs[t.dataset.run], p = r.pts; let i = +t.dataset.seg; const hor = p[i].y === p[i + 1].y;
+    if (i === 0) { p.splice(1, 0, { ...p[0] }); i = 1; r.o = hor ? 'V' : 'H'; }
+    if (i + 1 === p.length - 1) p.splice(p.length - 1, 0, { ...p[p.length - 1] });
+    drag = { kind: 'seg', r, i, hor, base: hor ? p[i].y : p[i].x, w0 };
+  }
+  window.addEventListener('pointermove', dragMove); window.addEventListener('pointerup', dragEnd, { once: true }); window.addEventListener('pointercancel', dragEnd, { once: true });
+}
+function dragMove(e) {
+  if (!drag) return; const p = svgPt(e), w = toW(p);
+  if (drag.kind === 'seg') { const v = snap(drag.base + (drag.hor ? w.y - drag.w0.y : w.x - drag.w0.x)), q = drag.r.pts, c = drag.hor ? 'y' : 'x'; q[drag.i][c] = v; q[drag.i + 1][c] = v; }
+  else if (drag.kind === 'anchor') { drag.p = p; drag.a.x = snap(w.x + drag.ox); drag.a.y = snap(w.y + drag.oy); syncAll(); }
+  else if (drag.kind === 'eq') drag.p = p;
+  else { drag.p = p; const g = nearestOnRuns(p); drag.near = g && g.d < 36 ? g : null; }
+  drawPfd(lastR);
+}
+function dragEnd() {
+  window.removeEventListener('pointermove', dragMove); if (!drag) return; const d = drag, l = lay(); drag = null;
+  if (d.kind === 'fit') { if (d.near) { if (d.isNew) l.fits.push(mkF(d.near.run, d.fit.type, d.near.f)); else { d.fit.run = d.near.run; d.fit.f = d.near.f; } } else if (!d.isNew) l.fits = l.fits.filter(x => x !== d.fit); }
+  else if (d.kind === 'eq') { if (d.p.x > 125) { const w = toW(d.p), q = { x: snap(w.x), y: snap(w.y) }; if (d.type === 'tank') l.tank = q; else if (d.type === 'pump') l.pump = q; else addDest(q); } }
+  else if (d.kind === 'anchor' && d.key !== 'tee' && inTrash(d.p)) { if (d.key === 'tank') l.tank = null; else if (d.key === 'pump') l.pump = null; else delDest(+d.key.slice(1)); }
+  if (d.kind === 'eq' || d.kind === 'anchor') afterStruct();
+  cleanAll(); update();
+}
+function renderHelp() {
+  const P = '#c8dce8', A = '#46a0d8', Y = '#ffd27a', bow = (x, y) => `<path d="M${x - 9} ${y - 6}L${x + 9} ${y + 6}V${y - 6}L${x - 9} ${y + 6}Z" fill="#0c1218" stroke="${P}" stroke-width="1.6"/>`;
+  const arrow = (x1, y1, x2, y2, dx, dy) => `<g class="mv" style="--dx:${dx}px;--dy:${dy}px"><path d="M${x1} ${y1}L${x2} ${y2}" stroke="${Y}" stroke-width="2.4" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="4" fill="${Y}"/></g>`;
+  const tips = [
+    [`<path d="M14 58H146" stroke="${P}" stroke-width="2" stroke-dasharray="4 4" opacity=".45" fill="none"/><path d="M14 58H52V24H108V58H146" stroke="${A}" stroke-width="4" fill="none" stroke-linejoin="round"/><circle cx="52" cy="58" r="4" fill="${A}"/><circle cx="52" cy="24" r="4" fill="${A}"/><circle cx="108" cy="24" r="4" fill="${A}"/><circle cx="108" cy="58" r="4" fill="${A}"/>${arrow(80, 52, 80, 30, 0, -5)}`,
+      L('Boruyu bük', 'Bend the pipe'), L('Borunun bir parçasına basılı tutup yana sürükle. Oluşan her köşe 90° dirsek olarak hesaba girer.', 'Press and hold a piece of pipe and drag it sideways. Every corner you create counts as a 90° elbow.')],
+    [`<rect x="10" y="14" width="34" height="30" rx="7" fill="rgba(140,170,190,.12)" stroke="${P}"/>${bow(27, 29)}<path d="M60 58H150" stroke="${A}" stroke-width="4"/>${bow(108, 58)}${arrow(48, 34, 96, 52, 5, 2)}`,
+      L('Ekipman ve parça ekle', 'Add equipment and fittings'), L('Soldaki kutudan tank, pompa ya da hedefi boş alana; vana, çekvalf ya da rakoru borunun üstüne sürükle. Borular kendiliğinden bağlanır, ikinci hedefte T ayrımı oluşur.', 'Drag a tank, pump or destination from the box on the left onto the canvas, and a valve, check valve or union onto a pipe. Pipes connect themselves; a second destination creates a tee.')],
+    [`<path d="M12 58H150" stroke="${A}" stroke-width="4"/>${bow(50, 58)}<g opacity=".55">${bow(112, 26)}</g><path d="M128 12l12 12m0 -12l-12 12" stroke="#ff7163" stroke-width="2.6" stroke-linecap="round"/>${arrow(60, 50, 100, 30, 4, -3)}`,
+      L('Taşı ya da sil', 'Move or remove'), L('Parçayı boru boyunca sürükleyerek taşı; borudan uzağa bırakırsan silinir. Tankı, pompayı ya da hedefi silmek için sol alttaki Sil kutusuna bırak.', 'Drag a fitting along the pipe to move it; drop it away from the pipe to remove it. To remove a tank, pump or destination, drop it on the Delete box at the bottom left.')],
+    [`<rect x="56" y="22" width="48" height="36" rx="8" fill="#0c1218" stroke="${P}" stroke-width="1.8"/><rect x="58" y="38" width="44" height="18" rx="6" fill="${A}" opacity=".45"/><path d="M80 14V4m-5 5l5-5 5 5M80 66v10m-5-5l5 5 5-5M48 40H36m5-5l-5 5 5 5M112 40h12m-5-5l5 5-5 5" stroke="${Y}" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+      L('Tankı, pompayı ve hedefi taşı', 'Move the tank, pump and destination'), L('Sürükle: düşey konum kotu, yatay konum mesafeyi belirler. Adım 0,5 m.', 'Drag them: vertical position sets the elevation, horizontal position the distance. Step is 0.5 m.')],
+    [`<rect x="14" y="18" width="132" height="20" rx="6" fill="rgba(140,170,190,.12)" stroke="${P}"/><text x="24" y="32" font-size="11" fill="${P}" font-family="Segoe UI,sans-serif">h₂</text><rect x="92" y="21" width="48" height="14" rx="4" fill="#0c1218" stroke="${A}"/><text x="116" y="32" font-size="10" fill="${P}" text-anchor="middle" font-family="Consolas,monospace">15</text><path d="M30 60h28l10 -8l10 16l10 -8h28" stroke="${A}" stroke-width="3" fill="none" stroke-linejoin="round"/><text x="134" y="64" font-size="11" fill="${Y}" font-family="Consolas,monospace">kW</text>`,
+      L('Hesap kendiliğinden yenilenir', 'The calculation updates itself'), L('Uzunluklar, kotlar, dirsekler ve parçalar şemadan okunur. Kesin değer için Güzergâh menüsüne sayı yaz. Sağ üstte: Sıfırla hazır şemaya döner, Boş şema her şeyi siler.', 'Lengths, elevations, elbows and fittings are read from the diagram. For an exact value, type it in the Route menu. Top right: Reset restores the ready-made diagram, Blank clears everything.')]
+  ];
+  $('helpBox').innerHTML = `<h3>${L('Akış şemasını nasıl düzenlerim?', 'How do I edit the flow diagram?')}</h3><div class="tips">${tips.map(t => `<div class="tip"><svg viewBox="0 0 160 80" aria-hidden="true">${t[0]}</svg><b>${t[1]}</b><span>${t[2]}</span></div>`).join('')}</div><div><button type="button" id="bHelpX">${L('Anladım', 'Got it')}</button></div>`;
+  $('bHelp').setAttribute('aria-label', L('Şema nasıl düzenlenir?', 'How to edit the diagram'));
+}
+function placeParts() { for (const p of paths) for (let i = 0; i < p.n; i++) { const pt = ptAt(p, ((i / p.n) * p.len + p.off) % p.len); p.cs[i].setAttribute('cx', pt[0].toFixed(1)); p.cs[i].setAttribute('cy', pt[1].toFixed(1)); } }
+
+/* ====================== GRAFİKLER ====================== */
+function ticks(lo, hi, n = 5) { const st = Math.pow(10, Math.floor(Math.log10((hi - lo) / n))), e = (hi - lo) / n / st, s = st * (e < 1.5 ? 1 : e < 3 ? 2 : e < 7 ? 5 : 10), o = []; for (let v = Math.ceil(lo / s) * s; v <= hi + s * 1e-6; v += s) o.push(+v.toFixed(10)); return o; }
+function chart(svg, o) {
+  const W = 560, H = +svg.viewBox.baseVal.height, m = { l: 50, r: 14, t: 12, b: 34 }, w = W - m.l - m.r, h = H - m.t - m.b;
+  const ser = o.series.filter(s => s.pts.length > 1), xs = ser.flatMap(s => s.pts.map(p => p[0])), ys = ser.flatMap(s => s.pts.map(p => p[1]));
+  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if (o.y0 != null) y0 = Math.min(y0, o.y0); if (y1 - y0 < 1e-9) y1 = y0 + 1; if (x1 - x0 < 1e-9) x1 = x0 + 1;
+  const pad = (y1 - y0) * 0.08; y1 += pad; if (o.y0 == null) y0 -= pad;
+  const X = x => m.l + (x - x0) / (x1 - x0) * w, Y = y => m.t + h - (y - y0) / (y1 - y0) * h, dec = v => { const r = Math.abs(v); return r >= 100 || Number.isInteger(v) ? 0 : r >= 10 ? 1 : 2; };
+  let s = '';
+  for (const v of ticks(y0, y1)) s += `<line x1="${m.l}" x2="${m.l + w}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--mute)" font-family="Consolas,monospace">${fmt(v, dec(v))}</text>`;
+  for (const v of ticks(x0, x1, 6)) s += `<line y1="${m.t}" y2="${m.t + h}" x1="${X(v)}" x2="${X(v)}" stroke="var(--line)"/><text x="${X(v)}" y="${m.t + h + 15}" text-anchor="middle" font-size="11" fill="var(--mute)" font-family="Consolas,monospace">${fmt(v, dec(v))}</text>`;
+  s += `<text x="${m.l + w}" y="${H - 4}" text-anchor="end" font-size="11" fill="var(--mute)" font-family="Segoe UI,sans-serif">${o.xl}</text>`;
+  for (const se of ser) s += `<polyline fill="none" stroke="${se.c}" stroke-width="${se.w || 2.4}" ${se.d ? `stroke-dasharray="${se.d}"` : 'class="draw" pathLength="1"'} stroke-linejoin="round" points="${se.pts.map(p => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ')}"/>`;
+  for (const mk of o.marks || []) s += `<circle cx="${X(mk.x)}" cy="${Y(mk.y)}" r="5" fill="var(--ink)"/><text x="${X(mk.x) + (mk.left ? -9 : 9)}" y="${Y(mk.y) - 8}" text-anchor="${mk.left ? 'end' : 'start'}" font-size="11.5" fill="var(--ink)" font-family="Segoe UI,sans-serif">${mk.t}</text>`;
+  for (const lb of o.labels || []) s += `<text x="${X(lb.x)}" y="${Y(lb.y) - 6}" text-anchor="middle" font-size="11" fill="var(--mute)" font-family="Segoe UI,sans-serif">${lb.t}</text>`;
+  svg.innerHTML = s;
+}
+function drawCharts(R, o) {
+  const rg = R.rho * G, I = R.I; let s = 0, P = R.P1; const main = [[0, P / 1e5]];
+  const run = (pts, len, dz, grad) => { if (len <= 0) return; s += len; P += -rg * dz - grad * len; pts.push([s, P / 1e5]); };
+  const gs = R.suc.L > 0 ? o.dPs / R.suc.L : 0, gm = R.main.L > 0 ? o.dPm / R.main.L : 0;
+  R.sucGeo.forEach(([l, dz]) => run(main, l, dz, gs));
+  const sp = s, Pp = P; P += rg * o.Hp; main.push([s, P / 1e5]);
+  R.mainGeo.forEach(([l, dz]) => run(main, l, dz, gm));
+  const sj = s, Pj = P, series = [], lg = [];
+  R.br.forEach((b, i) => {
+    if (o.Qi[i] <= 0) return; s = sj; P = Pj;
+    const pts = R.branched ? [[sj, Pj / 1e5]] : main, gb = b.seg.L > 0 ? loss(R, b.seg, o.Qi[i]) / b.seg.L : 0;
+    const o2 = sim.open[i] * sim.open[i], lf = loss(R, b.seg, o.Qi[i]), kv = rg * b.Kv / o2 * o.Qi[i] * o.Qi[i] + lf * b.cvFrac * (1 / o2 - 1); if (kv > 1) { P -= kv; pts.push([s, P / 1e5]); }
+    b.geo.forEach(([len, dz]) => run(pts, len, dz, gb));
+    if (R.branched) { series.push({ pts, c: BCOL[i] }); lg.push(`<span><i style="color:${BCOL[i]}"></i>${esc(b.name)}</span>`); }
+  });
+  const end = Math.max(...series.concat([{ pts: main }]).map(x => x.pts[x.pts.length - 1][0]));
+  series.unshift({ pts: main, c: R.branched ? 'var(--ink)' : 'var(--acc)' }); series.push({ pts: [[0, R.pv / 1e5], [end, R.pv / 1e5]], c: 'var(--bad)', d: '6 3', w: 1.6 });
+  chart($('cP'), { series, xl: L('hat boyunca mesafe, m', 'distance along line, m'), y0: 0, labels: [{ x: sp, y: Math.max(Pp, Pp + rg * o.Hp) / 1e5, t: L('pompa', 'pump') }] });
+  $('lgP').innerHTML = `<span><i style="color:${R.branched ? 'var(--ink)' : 'var(--acc)'}"></i>${R.branched ? L('Emme ve ana hat', 'Suction and main line') : L('Statik basınç', 'Static pressure')}</span>` + lg.join('') + `<span><i style="color:var(--bad);border-top-style:dashed"></i>${L('Buhar basıncı', 'Vapor pressure')}</span>`;
+  const Qm = Math.max(R.Q, o.Q) * 1.7, sys = sysCurve(R, sim.v, sim.open, Qm).filter(p => p[0] <= Qm * 3600 * 1.02), pc = [];
+  if (R.pumpNeeded) for (let i = 0; i <= 40; i++) { const Q = Qm * i / 40, hp = sim.n * sim.n * R.H0 - R.kp * Q * Q; if (hp >= 0) pc.push([Q * 3600, hp]); }
+  const ser = [{ pts: sys, c: 'var(--acc)' }]; if (pc.length > 1) ser.push({ pts: pc, c: 'var(--vio)' });
+  if (!ser.some(x => x.pts.length > 1)) ser.push({ pts: [[0, 0], [Qm * 3600, 0]], c: 'var(--line)' });
+  chart($('cS'), { series: ser, xl: 'Q, m³/h', y0: Math.min(0, R.Hstat), marks: [{ x: o.Q * 3600, y: o.Q > 0 ? o.Hp : sim.n * sim.n * R.H0, t: `${sig(o.Q * 3600, 3)} m³/h · ${fmt(o.Hp, 1)} m`, left: o.Q > Qm * 0.6 }] });
+}
+function drawVel(R) {
+  const svg = $('cV'), W = 900, yT = 40, yB = 190, x0 = 90, len = 560, lam = R.regime === 'lam';
+  const umax = lam ? 2 * R.v : R.v / 0.817, prof = r => lam ? 1 - r * r : Math.pow(1 - r, 1 / 7);
+  let pts = [], arrows = '';
+  for (let i = 0; i <= 60; i++) { const r = -1 + 2 * i / 60; pts.push([x0 + len * prof(Math.min(Math.abs(r), 0.999)), (yT + yB) / 2 + r * (yB - yT) / 2]); }
+  for (let i = 1; i < 12; i++) { const r = -1 + 2 * i / 12, y = (yT + yB) / 2 + r * (yB - yT) / 2, x = x0 + len * prof(Math.abs(r)); arrows += `<line x1="${x0}" y1="${y}" x2="${x - 4}" y2="${y}" stroke="var(--acc)" stroke-width="1.4"/><path d="M${x} ${y}l-8 -4v8z" fill="var(--acc)"/>`; }
+  svg.innerHTML = `<rect x="20" y="${yT - 8}" width="${W - 40}" height="8" fill="var(--mute)" opacity=".5"/><rect x="20" y="${yB}" width="${W - 40}" height="8" fill="var(--mute)" opacity=".5"/><rect x="20" y="${yT}" width="${W - 40}" height="${yB - yT}" fill="var(--acc)" opacity=".08"/>${arrows}<polyline fill="none" stroke="var(--ink)" stroke-width="2.2" points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}"/><line x1="${x0}" y1="${yT}" x2="${x0}" y2="${yB}" stroke="var(--mute)" stroke-dasharray="3 3"/>
+  <text x="${x0 + len + 12}" y="${(yT + yB) / 2 + 4}" font-size="13" fill="var(--ink)" font-family="Segoe UI,sans-serif">u max = ${fmt(umax, 2)} m/s</text><text x="${W - 24}" y="${yB + 28}" text-anchor="end" font-size="12" fill="var(--mute)" font-family="Segoe UI,sans-serif">${L('ortalama', 'mean')} v = ${fmt(R.v, 2)} m/s · D = ${fmt(R.pipe.id, 1)} mm</text><text x="24" y="${yT - 16}" font-size="12" fill="var(--mute)" font-family="Segoe UI,sans-serif">${lam ? L('parabolik profil: u = u_max (1 − (r/R)²)', 'parabolic profile: u = u_max (1 − (r/R)²)') : L('1/7 kuvvet yasası: u = u_max (1 − r/R)^(1/7)', '1/7 power law: u = u_max (1 − r/R)^(1/7)')}</text>`;
+  $('vpNote').textContent = `Re = ${fmt(R.Re, 0)} · ${lam ? L('laminer', 'laminar') : R.regime === 'tra' ? L('geçiş bölgesi', 'transition') : L('türbülanslı', 'turbulent')}`;
+}
+
+/* ====================== SİMÜLASYON ====================== */
+function buildBrSliders(R) {
+  $('brSl').innerHTML = R.branched ? R.br.map((b, i) => `<div class="sl"><div class="t"><label for="sB${i}" style="color:${BCOL[i]}">${esc(b.name)} · ${L('vana', 'valve')}</label><output id="oB${i}"></output></div><input id="sB${i}" data-br="${i}" type="range" min="0" max="100" step="5" value="${sim.open[i] * 100}"></div>`).join('') : '';
+  $('brSl').dataset.key = brKey(R);
+}
+const brKey = R => lang + '|' + (R.branched ? R.br.map(b => b.name).join('|') : '');
+function renderSim() {
+  const R = lastR; if (!R) return;
+  if ($('brSl').dataset.key !== brKey(R)) buildBrSliders(R);
+  op = operate(R, sim.n, sim.v, sim.open);
+  $('oN').textContent = `%${fmt(sim.n * 100, 0)}` + (R.pumpNeeded ? ` · ${fmt(R.I.rpm * sim.n, 0)} rpm` : '');
+  $('oV').textContent = GATE_LBL()[sim.v]; $('sN').disabled = !R.pumpNeeded; $('sV').disabled = !R.nGateS;
+  if (R.branched) R.br.forEach((b, i) => { const o = $('oB' + i); if (o) o.textContent = sim.open[i] > 0 ? `%${fmt(sim.open[i] * 100, 0)} · ${sig(op.Qi[i] * 3600, 3)} m³/h` : L('kapalı', 'closed'); });
+  const cav = R.pumpNeeded && op.Q > 0 && op.npsha < op.npshr, boil = R.pv >= R.P1;
+  const [t, c, d] = op.Q <= 0 ? [L('Akış yok', 'No flow'), 'var(--warn)', L('Pompanın yüksekliği statik yüksekliği yenemiyor ya da tüm vanalar kapalı.', 'The pump head cannot overcome the static head, or all valves are closed.')]
+    : cav || boil ? [L('Kavitasyon', 'Cavitation'), 'var(--bad)', L(`NPEY mevcut ${fmt(op.npsha, 2)} m, gereken ${fmt(op.npshr, 2)} m: pompa girişinde buhar kabarcıkları oluşur.`, `NPSH available ${fmt(op.npsha, 2)} m, required ${fmt(op.npshr, 2)} m: vapor bubbles form at the pump inlet.`)]
+    : [L('Normal çalışma', 'Normal operation'), 'var(--ok)', L(`NPEY mevcut ${fmt(op.npsha, 2)} m, gereken ${fmt(op.npshr, 2)} m.`, `NPSH available ${fmt(op.npsha, 2)} m, required ${fmt(op.npshr, 2)} m.`)];
+  $('simState').textContent = t; $('simState').style.color = c; $('simTxt').textContent = d; op.cav = (cav || boil) && op.Q > 0;
+  $('hud').textContent = `Q ${sig(op.Q * 3600, 3)} m³/h · v ${fmt(op.v, 2)} m/s · Re ${fmt(op.Re, 0)} · H ${fmt(op.Hp, 1)} m`;
+  const ms = $('mfSim'); if (ms) ms.innerHTML = `${L('durum', 'state')} <b style="color:${c}">${t}</b>`;
+  const tri = $('pumpTri'); if (tri) tri.setAttribute('fill', op.cav ? 'var(--bad)' : 'var(--acc)');
+  if (!op.cav && $('bub')) $('bub').innerHTML = '';
+  $('pfd').classList.toggle('cav', !!op.cav);
+  $('bPlay').textContent = sim.run ? L('Durdur', 'Pause') : L('Oynat', 'Play');
+  paths.forEach(p => { const q = p.key === 'main' ? op.Q : op.Qi[p.key]; p.v = p.key === 'main' ? op.v : op.bv[p.key]; if (p.cs && p.cs.length) p.cs[0].parentNode.style.opacity = q > 0 ? 1 : 0.15; });
+  drawCharts(R, op);
+}
+let last = performance.now(), bubT = 0, impA = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (sim.run && paths.length && op && op.Q > 0) {
+    for (const p of paths) if (p.v > 0) p.off = (p.off + dt * Math.min(260, 25 + 55 * p.v)) % p.len;
+    placeParts();
+    const imp = $('imp'); if (imp && lastR.pumpNeeded) { impA = (impA + dt * 420 * sim.n) % 360; imp.setAttribute('transform', `rotate(${impA.toFixed(1)} ${paths.px} ${paths.PY})`); }
+    if (op.cav) { bubT += dt; if (bubT > 0.07) { bubT = 0; const g = $('bub'); if (g.children.length > 26) g.removeChild(g.firstChild);
+      g.insertAdjacentHTML('beforeend', `<circle cx="${paths.px - 55 + Math.random() * 75}" cy="${paths.PY - 7 + Math.random() * 14}" r="${1.5 + Math.random() * 3.5}" fill="#fff" opacity="${0.5 + Math.random() * 0.4}"/>`); } }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ====================== PDF RAPORU ====================== */
+// Sayfalar tuvale çizilir ve JPEG olarak PDF'e gömülür: kitaplık ve internet gerekmez, Türkçe karakterler bozulmaz.
+const PDFC = { '--bg': '#ffffff', '--panel': '#ffffff', '--ink': '#14202b', '--mute': '#5d6b76', '--line': '#d5dce2', '--acc': '#1f6fb2', '--bad': '#c0392b', '--ok': '#2a8556', '--warn': '#b9770e', '--vio': '#6b3fc4', '--mon': '#ffffff', '--mon-ink': '#14202b', '--mon-mute': '#5d6b76', '--mon-pipe': '#3b4a57', '--mon-water': '#46a0d8' };
+function svgImage(svg, w) {
+  const vb = svg.viewBox.baseVal, h = Math.round(w * vb.height / vb.width);
+  const src = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${vb.width} ${vb.height}">${svg.innerHTML}</svg>`.replace(/var\((--[a-z-]+)\)/g, (m, k) => PDFC[k] || '#000');
+  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res({ im, w, h }); im.onerror = () => rej(new Error('svg')); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(src); });
+}
+function richRuns(html) { // satır içi <sub>, <sup>, <b>
+  const out = []; let s = 'n', b = false;
+  String(html).replace(/<(\/?)(sub|sup|b)>|<[^>]*>|([^<]+)/g, (m, cl, tag, t) => { if (tag) { if (tag === 'b') b = !cl; else s = cl ? 'n' : tag; } else if (t) out.push({ t: t.replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'), s, b }); return ''; });
+  return out;
+}
+function makeDoc() {
+  const PW = 1240, PH = 1754, M = 86, CW = PW - 2 * M, pages = [], SANS = '"Segoe UI",Arial,sans-serif', MONO = 'Consolas,"Courier New",monospace';
+  let cv, c, y;
+  const page = () => { cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, PW, PH); c.textBaseline = 'alphabetic'; pages.push(cv); y = M; };
+  const need = h => { if (y + h > PH - M - 30) page(); };
+  const font = (sz, o = {}) => `${o.b ? '600 ' : ''}${sz}px ${o.mono ? MONO : SANS}`;
+  function lines(html, sz, o, maxW) {
+    const atoms = []; richRuns(html).forEach(r => r.t.split(/( +)/).forEach(t => { if (t) atoms.push({ t, s: r.s, b: r.b || o.b, sp: /^ +$/.test(t) }); }));
+    const out = [[]]; let x = 0;
+    for (const a of atoms) { c.font = font(a.s === 'n' ? sz : sz * 0.72, { ...o, b: a.b }); const w = c.measureText(a.t).width;
+      if (x + w > maxW && !a.sp && x > 0) { out.push([]); x = 0; } if (a.sp && x === 0) continue; out[out.length - 1].push({ ...a, x, w }); x += w; }
+    out.forEach(l => l.w = l.length ? l[l.length - 1].x + l[l.length - 1].w : 0); return out;
+  }
+  function drawLines(ls, x, y0, sz, o, lh, alignW) {
+    ls.forEach((l, i) => { const ox = alignW ? x + alignW - l.w : x; l.forEach(a => { c.font = font(a.s === 'n' ? sz : sz * 0.72, { ...o, b: a.b }); c.fillStyle = o.color || '#14202b'; c.fillText(a.t, ox + a.x, y0 + i * lh + (a.s === 'sub' ? sz * 0.25 : a.s === 'sup' ? -sz * 0.38 : 0)); }); });
+  }
+  const D = {
+    text(html, sz = 21, o = {}) { const lh = sz * 1.45, ls = lines(html, sz, o, CW - (o.indent || 0)); ls.forEach(l => { need(lh); drawLines([l], M + (o.indent || 0), y + sz, sz, o, lh); y += lh; }); y += o.after ?? 6; },
+    h1(t) { D.text(t, 40, { b: 1, after: 2 }); },
+    h2(t) { need(130); y += 18; D.text(t, 27, { b: 1, color: '#1f6fb2', after: 2 }); c.fillStyle = '#d5dce2'; c.fillRect(M, y, CW, 2); y += 14; },
+    h3(t) { need(100); y += 8; D.text(t, 22.5, { b: 1, after: 2 }); },
+    p(t) { D.text(t, 20, { color: '#3d4a55' }); },
+    f(t) { D.text(t, 19, { mono: 1, indent: 18, after: 4 }); },
+    table(head, rows, w, o = {}) {
+      const sz = o.sz || 18.5, lh = sz * 1.4, pad = 9, tot = w.reduce((a, b) => a + b, 0), cw = w.map(v => v / tot * CW), num = o.num || [];
+      const row = (cells, hd) => { const ls = cells.map((t, i) => lines(String(t), sz, { b: hd }, cw[i] - 2 * pad)), h = Math.max(...ls.map(l => l.length)) * lh + 2 * pad - 4; need(h);
+        if (hd) { c.fillStyle = '#eef2f6'; c.fillRect(M, y, CW, h); }
+        let x = M; ls.forEach((l, i) => { drawLines(l, x + pad, y + pad + sz - 3, sz, { b: hd, color: hd ? '#5d6b76' : '#14202b' }, lh, num.includes(i) ? cw[i] - 2 * pad : 0); x += cw[i]; });
+        y += h; c.fillStyle = '#d5dce2'; c.fillRect(M, y, CW, 1); };
+      if (head) row(head, true); rows.forEach(r => row(r, false)); y += 14;
+    },
+    image(img, w) { const h = img.h * w / img.w; need(h + 10); c.drawImage(img.im, M + (CW - w) / 2, y, w, h); y += h + 12; },
+    images2(a, b) { const w = (CW - 20) / 2, h = Math.max(a.h * w / a.w, b.h * w / b.w); need(h + 10); c.drawImage(a.im, M, y, w, a.h * w / a.w); c.drawImage(b.im, M + w + 20, y, w, b.h * w / b.w); y += h + 12; },
+    finish(footer) { pages.forEach((p, i) => { const x = p.getContext('2d'); x.font = font(16); x.fillStyle = '#5d6b76'; x.fillText(footer, M, PH - 48); const t = `${i + 1} / ${pages.length}`; x.fillText(t, PW - M - x.measureText(t).width, PH - 48); x.fillStyle = '#d5dce2'; x.fillRect(M, PH - 76, CW, 1); }); return pages; }
+  };
+  page(); return D;
+}
+function pdfBlob(pages) { // her sayfa bir JPEG
+  const enc = new TextEncoder(), parts = [], offs = []; let pos = 0;
+  const put = d => { const u = typeof d === 'string' ? enc.encode(d) : d; parts.push(u); pos += u.length; }, obj = (n, body) => { offs[n] = pos; put(`${n} 0 obj\n${body}\nendobj\n`); };
+  put('%PDF-1.4\n'); const n = pages.length;
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>'); obj(2, `<< /Type /Pages /Count ${n} /Kids [${pages.map((p, i) => `${3 + i * 3} 0 R`).join(' ')}] >>`);
+  pages.forEach((cv, i) => {
+    const bin = atob(cv.toDataURL('image/jpeg', 0.9).split(',')[1]), jpg = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) jpg[k] = bin.charCodeAt(k);
+    const a = 3 + i * 3, cs = 'q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';
+    obj(a, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${a + 2} 0 R >> >> /Contents ${a + 1} 0 R >>`);
+    obj(a + 1, `<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`);
+    offs[a + 2] = pos; put(`${a + 2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${cv.width} /Height ${cv.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`); put(jpg); put('\nendstream\nendobj\n');
+  });
+  const xref = pos, cnt = 3 + n * 3; let x = `xref\n0 ${cnt}\n0000000000 65535 f \n`; for (let i = 1; i < cnt; i++) x += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+  put(x + `trailer\n<< /Size ${cnt} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(parts, { type: 'application/pdf' });
+}
+function inputRows(R) {
+  const I = R.I, r = [[L('Akışkan', 'Fluid'), fluidName(R)], [L('Giriş sıcaklığı', 'Inlet temperature'), `${fmt(I.T, 1)} °C`], [L('Toplam debi', 'Total flow rate'), `${sig(R.mdot * 3600, 6)} kg/h = ${sig(R.Qh, 4)} m³/h`],
+    [L('Kaynak tank', 'Source tank'), L(`${fmt(I.P1, 2)} atm; sıvı seviyesi pompaya göre ${fmt(I.zt, 1)} m`, `${fmt(I.P1, 2)} atm; liquid level ${fmt(I.zt, 1)} m relative to pump`)], [L('Emme hattı', 'Suction line'), `${fmt(R.suc.L, 1)} m`]];
+  if (!R.branched) r.push([L('Hedef', 'Destination'), `${fmt(I.P2, 2)} atm; ${L('giriş kotu', 'inlet elevation')} ${fmt(I.zr, 1)} m`], [L('Basma hattı', 'Discharge line'), `${fmt(R.br[0].seg.L, 1)} m`]);
+  else { r.push([L('Ana hat (pompa → T)', 'Main line (pump → tee)'), `${fmt(R.main.L, 1)} m; ${L('T kotu', 'tee elevation')} ${fmt(I.zj, 1)} m`]); R.br.forEach(b => r.push([b.name, `%${fmt(b.frac * 100, 0)} ${L('debi', 'of flow')}; ${fmt(b.P / ATM, 2)} atm; ${L('kot', 'elevation')} ${fmt(b.z, 1)} m; ${L('boru', 'pipe')} ${fmt(b.seg.L, 1)} m; ${b.el} ${L('dirsek', 'elbows')}`])); }
+  r.push([L('Pompa', 'Pump'), `${I.rpm} rpm; ${L('gereken NPEY', 'NPSH required')} ${fmt(I.npshr, 1)} m`], [L('Ortam sıcaklığı', 'Ambient temperature'), `${fmt(I.Ta, 0)} °C`]);
+  return r;
+}
+function toast(t) { const e = $('toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { e.hidden = true; }, 4500); }
+// Dosyayı kaydeder. Bilgisayardaki dosyada tarayıcı indirmesi; yayımlanmış sayfada görüntüleyicinin onaylı kaydetme penceresi kullanılır.
+async function saveFile(blob, name) {
+  if (window.claude && window.claude.use) {
+    const dl = await window.claude.use('downloads');
+    if (!dl) { toast(L('Bu görünümde dosya indirilemiyor.', 'Files cannot be saved in this view.')); return; }
+    try { await dl.save({ filename: name, data: blob }); } catch (e) { if (!e || e.code !== 'declined') toast(L('Dosya kaydedilemedi.', 'The file could not be saved.')); }
+    return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function makePdf(noDownload) {
+  const R = lastR; if (!R) return; const btn = $('bPdf'), old = btn.textContent; btn.disabled = true; btn.textContent = L('Hazırlanıyor…', 'Preparing…');
+  const keep = { n: sim.n, v: sim.v, open: sim.open.slice() };
+  try {
+    sim.n = 1; sim.v = 3; sim.open = sim.open.map(() => 1); renderSim(); // grafikler tasarım noktasında
+    const [pfd, cP, cS] = await Promise.all([svgImage(exportPfd(), 1400), svgImage($('cP'), 900), svgImage($('cS'), 900)]);
+    const D = makeDoc(), date = new Date().toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB');
+    D.h1(L('Boru Hattı Tasarımı – Hesap Raporu', 'Pipeline Design – Calculation Report'));
+    D.text(`${esc(fluidName(R))} · ${fmt(R.I.T, 1)} °C · ${sig(R.mdot * 3600, 5)} kg/h · ${R.branched ? L(`dallanan hat, ${R.br.length} kol`, `branched line, ${R.br.length} branches`) : L('tek hat', 'single line')} · ${date}`, 20, { color: '#5d6b76', after: 4 });
+    D.text(L('Bu rapor, programın verdiği her değerin hangi veriden ve hangi bağıntıyla bulunduğunu gösterir. Sonuçlar doğrulanmalıdır, bu bir ön tasarım aracıdır.', 'This report shows which data and which relation each value comes from. Results must be verified; this is a preliminary design tool.'), 18.5, { color: '#5d6b76' });
+    D.h2(L('1. Girdiler', '1. Inputs')); D.table(null, inputRows(R).map(r => [`<b>${esc(r[0])}</b>`, esc(r[1])]), [1, 2.4]);
+    D.h2(L('2. Akışkan özellikleri', '2. Fluid properties')); D.table([L('Özellik', 'Property'), L('Değer', 'Value'), L('Kaynak', 'Source')], propRows(R), [1.4, 1.2, 2.6]);
+    D.h2(L('3. Tasarım özeti', '3. Design summary')); D.table(null, kpiData(R).map(k => [`<b>${k[0]}</b>`, `${k[1]} ${k[2]}`]), [1, 2.4]);
+    if (R.branched) D.table(branchHead(), branchRows(R), [2.2, 1.1, 2.2, 1, 1.2, 1.4, 1.5, 1.9], { sz: 16.5, num: [1, 3, 4, 5, 6, 7] });
+    D.h2(L('4. Akış şeması', '4. Flow diagram')); D.image(pfd, 1068);
+    D.h2(L('5. Önerilen sistem elemanları', '5. Recommended system components')); D.table([L('Eleman', 'Component'), L('Öneri', 'Recommendation'), L('Gerekçe', 'Why')], recData(R).map(r => [`<b>${r[0]}</b>`, r[1], esc(r[2])]), [1.2, 2, 2.6], { sz: 17.5 });
+    if (R.fl) { D.h2(L('6. Malzeme uyumu', '6. Material compatibility')); D.p(L(`Notlar Graco Chemical Compatibility Guide'daki "${R.fl.gn}" satırından alınmıştır (A mükemmel, B iyi, C orta–zayıf, D önerilmez, – veri yok; 21 °C). 40 °C üstünde yalnızca A kabul edilir; yanıcı akışkanda plastik boru önerilmez. PVC ve CPVC kılavuzda yer almadığı için üretici verisi kullanılır.`, `Ratings are from the "${R.fl.gn}" row of the Graco Chemical Compatibility Guide (A excellent, B good, C fair to poor, D not recommended, – no data; 21 °C). Above 40 °C only A is accepted; plastic pipe is not recommended for flammables. PVC and CPVC are not in the guide, so manufacturer data is used.`));
+      D.table([L('Malzeme', 'Material'), L('Not', 'Rating'), L('Kaynak', 'Source'), L('Karar', 'Verdict'), L('Açıklama', 'Remark')], compatData(R).map(r => [r[0], r[1] === '-' || !r[1] ? '–' : `<b>${r[1]}</b>`, r[2], r[3] === 'sel' ? `<b>${verdict(r[3])}</b>` : verdict(r[3]), esc(r[4])]), [2.3, 0.6, 0.9, 1.1, 2.6], { sz: 17.5 }); }
+    D.h2(L('7. Durum ve uyarılar', '7. Status and warnings')); messages(R).forEach(([lv, t]) => D.text((lv === 'e' ? '✖ ' : lv === 'w' ? '▲ ' : '✔ ') + esc(t), 19, { color: lv === 'e' ? '#c0392b' : lv === 'w' ? '#8a5a08' : '#1d6a42', after: 5 }));
+    D.h2(L('8. Hesap adımları', '8. Calculation steps'));
+    stepsData(R).forEach((s, i) => { D.h3(`${i + 1}. ${s.t}`); s.items.forEach(([k, v]) => k === 'p' ? D.p(v) : k === 'f' ? D.f(v) : D.table(v.head, v.rows, v.w, { sz: 16.5, num: v.head.map((h, j) => j).filter(j => j && !(v.head.length === 8 && j === 2)) })); });
+    D.h2(L('9. Grafikler (tasarım noktası)', '9. Charts (design point)')); D.images2(cP, cS);
+    D.p(L('Sol: hat boyunca statik basınç ve buhar basıncı (bar, mutlak). Sağ: sistem eğrisi ile temsilî pompa eğrisi; nokta çalışma noktasıdır. Pompa eğrisi katalog verisi değildir: tasarım noktasından geçen, kapalı vana yüksekliği 1,25·H olan bir paraboldür.', 'Left: static pressure along the line and vapor pressure (bar abs). Right: system curve with an illustrative pump curve; the dot is the operating point. The pump curve is not catalogue data: it is a parabola through the design point with a shut-off head of 1.25·H.'));
+    D.h2(L('10. Kaynaklar', '10. Sources')); sources().forEach(s => D.text('• ' + esc(s), 18.5, { color: '#3d4a55' }));
+    const pages = D.finish(L('Boru Hattı Tasarım Programı · ön tasarım raporu', 'Pipeline Design Program · preliminary design report') + ' · © ' + AUTHOR), blob = pdfBlob(pages);
+    if (!noDownload) await saveFile(blob, L('boru-hatti-hesap-raporu.pdf', 'pipeline-calculation-report.pdf'));
+    return { blob, pages };
+  } finally { Object.assign(sim, keep); renderSim(); btn.disabled = false; btn.textContent = old; }
+}
+
+/* ====================== OLAYLAR ====================== */
+function showTab(t) { document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t)); ['sum', 'rec', 'sim', 'chart', 'calc'].forEach(k => $('p_' + k).hidden = k !== t);
+  if (t === 'chart') { const cs = [$('cP'), $('cS')]; cs.forEach(c => c.classList.add('anim')); clearTimeout(showTab.t); showTab.t = setTimeout(() => cs.forEach(c => c.classList.remove('anim')), 1400); } }
+const REF = { fluid: 'h2so4_60', T: 55, flow: 80000, flowBasis: 'mass', P1: 1, P2: 1.3, zt: 5, zr: 15, Ldh: 16, Lsh: 2, matMode: 'auto', diaMode: 'auto', rpm: '3500', npshr: 3, Ta: 20, hours: 8000, eff: '', fOv: '' };
+function resetSim() { sim.n = 1; sim.v = 3; sim.open = sim.open.map(() => 1); $('sN').value = 100; $('sV').value = 3; document.querySelectorAll('#brSl input').forEach(e => e.value = 100); }
+function loadRef() { LY1 = defLayout('single'); afterStruct(); Object.entries(REF).forEach(([k, v]) => $(k).value = v); resetSim(); update(); }
+
+restructure(); applyLang(); $('fluid').value = 'h2so4_60';
+$('inputs').addEventListener('input', e => {
+  const b = e.target.dataset.b, k = e.target.dataset.k, l = lay(), v = parseFloat(e.target.value);
+  if (b != null) { const d = l.dests[b];
+    if (k === 'name') d.name = e.target.value; else if (k === 'pct' || k === 'P') d[k] = v;
+    else if (isFinite(v)) { if (k === 'z') d.y = (l.pump ? l.pump.y : 0) + v; else d.x = (l.tee ? l.tee.x : 0) + v; syncAll(); cleanAll(); } }
+  if (e.target.id === 'P2' && l.dests[0]) l.dests[0].P = v;
+  if (['zt', 'Lsh', 'zr', 'Ldh', 'Lm', 'zj'].includes(e.target.id)) layoutFromInputs();
+  update();
+});
+$('inputs').addEventListener('click', e => { const d = e.target.dataset.del; if (d != null) { delDest(+d); afterStruct(); update(); } });
+$('bAdd').addEventListener('click', () => { addDest(); afterStruct(); update(); });
+$('mSingle').addEventListener('click', () => { LY1 = defLayout('single'); afterStruct(); update(); });
+$('mBranch').addEventListener('click', () => { LY1 = defLayout('branch'); afterStruct(); update(); });
+$('matMode').addEventListener('change', () => { fillNps(); update(); });
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
+$('bRef').addEventListener('click', loadRef);
+$('pfd').addEventListener('pointerdown', dragStart);
+$('bLayReset').addEventListener('click', () => { LY1 = defLayout(mode); afterStruct(); resetSim(); update(); });
+$('bLayClear').addEventListener('click', () => { LY1 = blankLayout(); afterStruct(); update(); });
+$('bHelp').addEventListener('click', () => { $('helpBox').hidden = !$('helpBox').hidden; });
+$('helpBox').addEventListener('click', e => { if (e.target.id === 'bHelpX' || e.target.id === 'helpBox') $('helpBox').hidden = true; });
+$('bLang').addEventListener('click', () => { lang = lang === 'tr' ? 'en' : 'tr'; applyLang(); update(); });
+$('bPdf').addEventListener('click', () => makePdf().catch(err => toast(L('PDF oluşturulamadı: ', 'Could not create the PDF: ') + (err && err.message || err))));
+$('sN').addEventListener('input', e => { sim.n = e.target.value / 100; renderSim(); });
+$('sV').addEventListener('input', e => { sim.v = +e.target.value; renderSim(); });
+$('brSl').addEventListener('input', e => { sim.open[+e.target.dataset.br] = e.target.value / 100; renderSim(); });
+$('bPlay').addEventListener('click', () => { sim.run = !sim.run; renderSim(); });
+$('bReset').addEventListener('click', () => { resetSim(); renderSim(); });
+update();
+requestAnimationFrame(frame);
+window.__pipe = { get LAY() { return { single: LY1, branch: LY1 }; }, get lay() { return LY1; }, get VIEW() { return VIEW; }, compute, readInputs, operate, nomoVisc, makePdf, showTab, update, get R() { return lastR; }, get op() { return op; } };
+})();
+</script>
+</body>
+</html>
